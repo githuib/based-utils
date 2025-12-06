@@ -2,6 +2,8 @@ import re
 import unicodedata
 from typing import TYPE_CHECKING
 
+from more_itertools import transpose
+
 from based_utils.data.iterators import equalized
 
 if TYPE_CHECKING:
@@ -39,8 +41,13 @@ def align_center(s: str, width: int, *, fill_char: str = " ") -> str:
 def equalized_lines(
     lines: Iterable[str], *, fill_char: str = " ", max_length: int = None
 ) -> Iterator[str]:
-    for foo in equalized(lines, fill_item=fill_char, max_length=max_length):
-        yield "".join(foo)
+    for line in equalized(lines, fill_char, max_length=max_length):
+        yield "".join(line)
+
+
+def transposed_lines(lines: Iterable[str]) -> Iterator[str]:
+    for col in transpose(lines):
+        yield "".join(col)
 
 
 def split_at(s: str, pos: int) -> tuple[str, str]:

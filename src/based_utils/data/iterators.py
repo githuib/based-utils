@@ -1,11 +1,11 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from itertools import chain, pairwise, repeat, takewhile, tee
 from typing import TYPE_CHECKING
 
 from more_itertools import before_and_after, last, split_when, transpose
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
 
 
 type Predicate[T] = Callable[[T], bool]
@@ -79,12 +79,12 @@ def polarized[T](
 
 
 def equalized[T](
-    items: Iterable[Sequence[T]], *, fill_item: T = None, max_length: int = None
+    items: Iterable[Sequence[T]], default_value: T, max_length: int = None
 ) -> Iterator[list[T]]:
     if max_length is None:
         max_length = max(len(item) for item in items)
     for item in items:
-        yield [*item, fill_item * max(0, max_length - len(item))]
+        yield [*item, *([default_value] * max(0, max_length - len(item)))]
 
 
 def split_when_changed[T](
@@ -145,8 +145,3 @@ def rotated_cw[T](rows: Iterable[Iterable[T]]) -> Iterator[tuple[T, ...]]:
 
 def rotated_ccw[T](rows: Iterable[Iterable[T]]) -> Iterator[tuple[T, ...]]:
     return transpose(reversed(list(rows)))
-
-
-def transpose_lines(lines: Iterable[str]) -> Iterator[str]:
-    for col in transpose(lines):
-        yield "".join(col)
