@@ -223,7 +223,7 @@ class Color:
         >>> Color.from_rgb(None) is None
         True
         >>> Color.from_rgb(RGB(128, 131, 3)).rgb
-        RGB(red=127, green=131, blue=3)
+        RGB(red=128, green=131, blue=3)
         """
         if rgb is None:
             return None
@@ -234,7 +234,7 @@ class Color:
     @cached_property
     def rgb(self) -> RGB:
         r, g, b = hsluv_to_rgb(self.hsluv_tuple)
-        return RGB(int(r * 255), int(g * 255), int(b * 255))
+        return RGB(round(r * 255), round(g * 255), round(b * 255))
 
     @cached_property
     def contrasting_shade(self) -> Self:
