@@ -3,6 +3,7 @@ import time
 from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
+from functools import reduce
 from itertools import count
 from os import get_terminal_size
 from typing import TYPE_CHECKING, cast
@@ -19,7 +20,7 @@ type Lines = Iterable[str]
 
 
 @dataclass(frozen=True)
-class AnimationParams:
+class AnimParams:
     fps: int | None = None
     keep_last: bool = True
     only_every_nth: int = 1
@@ -48,10 +49,10 @@ def animate[T](
     items: Iterable[T],
     format_item: Callable[[T], Lines] | None = None,
     *,
-    params: AnimationParams = None,
+    params: AnimParams = None,
 ) -> Iterator[T]:
     if params is None:
-        params = AnimationParams()
+        params = AnimParams()
 
     def to_lines(item_: T) -> Lines:
         if format_item is None:
@@ -78,30 +79,33 @@ def animate[T](
             clear_lines(lines_written)
 
 
+type Animation = Callable[[Lines, int, int], Lines]
+
+
 def animated(
-    lines: Lines,
-    *frame_n: Callable[[Lines, int], Lines],
-    num_frames: int = None,
-    fill_char: str = " ",
+    lines: Lines, *animations: Animation, num_frames: int = None, fill_char: str = " "
 ) -> Callable[[], Iterator[Lines]]:
     def func() -> Iterator[Lines]:
         max_width, max_height = get_terminal_size()
+        n_frames = max_width if num_frames is None else num_frames
 
         block = list(lines)
         height = min(len(block), max_height - 1)
         block = block[-height:]
         block_width = max(len(line) for line in block)
 
-        frame_0: Lines = [
-            line.ljust(block_width, fill_char).center(max_width, fill_char)
-            for line in block
-        ]
-        for i in count():
-            n = i % (num_frames or max_width)
-            frame = frame_0
-            for f in frame_n:
-                frame = f(frame, n)
-            yield frame
+        def frame_0() -> Lines:
+            for line in block:
+                yield line.ljust(block_width, fill_char).center(max_width, fill_char)
+
+        def frame_(n: int) -> Callable[[Lines, Animation], Lines]:
+            def anim(frame: Lines, a: Animation) -> Lines:
+                return a(frame, n, n_frames)
+
+            return anim
+
+        for f in count():
+            yield reduce(frame_(f), animations, frame_0())
 
     return func
 
@@ -111,45 +115,59 @@ Frame N functions
 """
 
 
-def moving_forward(frame_0: Lines, n: int) -> Lines:
-    return [(line[-n:] + line[:-n]) for line in frame_0]
+def moving_forward(frame_0: Lines, n: int, n_frames: int) -> Lines:
+    n %= n_frames
+    for line in frame_0:
+        yield line[-n:] + line[:-n]
 
 
-def fuck_me_sideways(frame_0: Lines, n: int) -> Lines:
+def fuck_me_sideways(frame_0: Lines, n: int, n_frames: int) -> Lines:
+    n %= n_frames
     lines = list(frame_0)
     h = len(lines) - 1
     hh = h // 2
-    return [
-        (
-            line[(n * -i) if i < hh else n * (h - i) :]
-            + line[: (n * -i) if i < hh else n * (h - i)]
-        )
-        for i, line in enumerate(lines)
-    ]
+    for y, line in enumerate(lines):
+        x = n * -(((hh + y) % h) - hh)
+        yield line[x:] + line[:x]
 
 
-def changing_colors(frame_0: Lines, n: int, *, amount_of_hues: int = 101) -> Lines:
-    color = Color.from_fields(hue=n / amount_of_hues, lightness=0.75)
-    background = color.contrasting_hue.contrasting_shade
-    return [Colored(line, color, background).formatted for line in frame_0]
+def _colorful(
+    colors: Callable[[float, float], tuple[Color, Color]], *, amount_of_hues: int = 360
+) -> Animation:
+    def anim(frame_0: Lines, n: int, _n_frames: int) -> Lines:
+        hue = n / amount_of_hues
+        fg, bg = colors(n, hue)
+        for line in frame_0:
+            yield Colored(line, fg, bg).formatted
+
+    return anim
+
+
+def changing_colors(*, amount_of_hues: int = 360) -> Animation:
+    def colors(_n: float, hue: float) -> tuple[Color, Color]:
+        fg = Color.from_fields(hue=hue, lightness=0.75)
+        bg = fg.contrasting_hue.contrasting_shade
+        return fg, bg
+
+    return _colorful(colors, amount_of_hues=amount_of_hues)
 
 
 def flashing(
-    frame_0: Lines,
-    n: int,
-    intensity: float = 0.1,
-    hue: float = None,
-    amount_of_hues: int = 101,
-) -> Lines:
-    flash = n % 5 == 0 and randf() < intensity * 5
-    h = randf() if flash else n / amount_of_hues if hue is None else hue
-    fg = Color.from_fields(hue=h, lightness=0.5)
-    bg = fg.shade(0.2)
-    return [
-        Colored(
-            line,
-            fg.but_with(lightness=0.3) if flash else fg,
-            bg.but_with(lightness=0.9) if flash else bg,
-        ).formatted
-        for line in frame_0
-    ]
+    *,
+    amount_of_hues: int = 360,
+    intensity: float = 303_909_303 / 10**10,
+    fg: Color = None,
+    bg: Color = None,
+) -> Animation:
+    def colors(n: float, hue: float) -> tuple[Color, Color]:
+        flash_ratio = 3
+        flash = n % flash_ratio == 0 and randf() < intensity * flash_ratio
+        c_fg = Color.from_fields(hue=hue, lightness=0.5) if fg is None else fg
+        c_bg = c_fg.shade(0.2) if bg is None else bg
+        if flash:
+            hue = hue + 0.5 if fg is None else randf()
+            c_fg = c_fg.but_with(hue=hue, lightness=0.3)
+            c_bg = c_bg.but_with(hue=hue, lightness=0.9)
+        return c_fg, c_bg
+
+    return _colorful(colors, amount_of_hues=amount_of_hues)
