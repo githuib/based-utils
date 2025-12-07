@@ -10,13 +10,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-@dataclass(frozen=True)
-class RGB:
-    red: int
-    green: int
-    blue: int
-
-
 type ColorName = Literal[
     "red",
     "orange",
@@ -88,6 +81,62 @@ HUES_2: Hues = {
 }
 
 
+@dataclass(frozen=True)
+class RGB:
+    red: int
+    green: int
+    blue: int
+
+
+@dataclass(frozen=True)
+class _HSLuv:
+    hue: float  # 0 - 360
+    saturation: float  # 0 - 100
+    lightness: float  # 0 - 100
+
+    @classmethod
+    def from_hex(cls, rgb_hex: str | None) -> Self | None:
+        if rgb_hex is None:
+            return None
+
+        rgb_hex = rgb_hex.removeprefix("#").lower()
+
+        if len(rgb_hex) == 1:
+            # 3 -> r=33, g=33, b=33
+            r = g = b = rgb_hex * 2
+
+        elif len(rgb_hex) == 2:
+            # 03 -> r=03, g=03, b=03
+            r = g = b = rgb_hex
+
+        elif len(rgb_hex) == 3:
+            # 303 -> r=33, g=00, b=33
+            r1, g1, b1 = iter(rgb_hex)
+            r, g, b = r1 * 2, g1 * 2, b1 * 2
+
+        elif len(rgb_hex) == 6:
+            # 808303 -> r=80, g=83, b=03
+            r1, r2, g1, g2, b1, b2 = iter(rgb_hex)
+            r, g, b = r1 + r2, g1 + g2, b1 + b2
+
+        else:
+            raise ValueError(rgb_hex)
+
+        hue, sat, li = hex_to_hsluv(f"#{r}{g}{b}")
+        return cls(hue, sat, li)
+
+    @cached_property
+    def hex(self) -> str:
+        return hsluv_to_hex((self.hue, self.saturation, self.lightness))[1:]
+
+    def __repr__(self) -> str:
+        return (
+            f"Color(hue={self.hue:.2f}°, "
+            f"saturation={self.saturation:.2f}%, "
+            f"lightness={self.lightness:.2f}%)"
+        )
+
+
 @dataclass(frozen=True, order=True)
 class Color:
     lightness: float  # 0 - 1 (ratio)
@@ -97,8 +146,7 @@ class Color:
     hues: ClassVar[Hues] = HUES
 
     def __repr__(self) -> str:
-        h, s, li = self.hsluv_tuple
-        return f"Color(hue={h:.2f}°, saturation={s:.2f}%, lightness={li:.2f}%)"
+        return repr(self.hsluv)
 
     @classmethod
     def from_fields(
@@ -137,13 +185,14 @@ class Color:
         return cls.from_fields(lightness=lightness, saturation=0)
 
     @classmethod
-    def from_hsluv_tuple(cls, hsluv: tuple[float, float, float]) -> Self:
-        hue, saturation, lightness = hsluv
-        return cls(lightness / 100, saturation / 100, hue / 360)
+    def from_hsluv(cls, hsluv: _HSLuv | None) -> Self | None:
+        if hsluv is None:
+            return None
+        return cls(hsluv.lightness / 100, hsluv.saturation / 100, hsluv.hue / 360)
 
     @cached_property
-    def hsluv_tuple(self) -> tuple[float, float, float]:
-        return self.hue * 360, self.saturation * 100, self.lightness * 100
+    def hsluv(self) -> _HSLuv:
+        return _HSLuv(self.hue * 360, self.saturation * 100, self.lightness * 100)
 
     @overload
     @classmethod
@@ -172,8 +221,6 @@ class Color:
         >>> c = Color.from_hex("808303")
         >>> c
         Color(hue=87.89°, saturation=99.48%, lightness=52.76%)
-        >>> [f"{v:.3f}" for v in c.hsluv_tuple]
-        ['87.891', '99.484', '52.761']
         >>> c.hex
         '808303'
         >>> c.rgb
@@ -181,44 +228,16 @@ class Color:
         >>> c2 = Color.from_hex("0af")
         >>> c2
         Color(hue=243.16°, saturation=100.00%, lightness=66.50%)
-        >>> [f"{v:.3f}" for v in c2.hsluv_tuple]
-        ['243.162', '100.000', '66.495']
         >>> c2.hex
         '00aaff'
         >>> c2.rgb
         RGB(red=0, green=170, blue=255)
         """
-        if rgb_hex is None:
-            return None
-
-        rgb_hex = rgb_hex.removeprefix("#").lower()
-
-        if len(rgb_hex) == 1:
-            # 3 -> r=33, g=33, b=33
-            r = g = b = rgb_hex * 2
-
-        elif len(rgb_hex) == 2:
-            # 03 -> r=03, g=03, b=03
-            r = g = b = rgb_hex
-
-        elif len(rgb_hex) == 3:
-            # 303 -> r=33, g=00, b=33
-            r1, g1, b1 = iter(rgb_hex)
-            r, g, b = r1 * 2, g1 * 2, b1 * 2
-
-        elif len(rgb_hex) == 6:
-            # 808303 -> r=80, g=83, b=03
-            r1, r2, g1, g2, b1, b2 = iter(rgb_hex)
-            r, g, b = r1 + r2, g1 + g2, b1 + b2
-
-        else:
-            raise ValueError(rgb_hex)
-
-        return cls.from_hsluv_tuple(hex_to_hsluv(f"#{r}{g}{b}"))
+        return cls.from_hsluv(_HSLuv.from_hex(rgb_hex))
 
     @cached_property
     def hex(self) -> str:
-        return hsluv_to_hex(self.hsluv_tuple)[1:]
+        return self.hsluv.hex
 
     @overload
     @classmethod
@@ -241,8 +260,6 @@ class Color:
         >>> c = Color.from_rgb(RGB(128, 131, 3))
         >>> c
         Color(hue=87.89°, saturation=99.48%, lightness=52.76%)
-        >>> [f"{v:.3f}" for v in c.hsluv_tuple]
-        ['87.891', '99.484', '52.761']
         >>> c.hex
         '808303'
         >>> c.rgb
@@ -250,8 +267,6 @@ class Color:
         >>> c2 = Color.from_rgb(RGB(0, 170, 255))
         >>> c2
         Color(hue=243.16°, saturation=100.00%, lightness=66.50%)
-        >>> [f"{v:.3f}" for v in c2.hsluv_tuple]
-        ['243.162', '100.000', '66.495']
         >>> c2.hex
         '00aaff'
         >>> c2.rgb
@@ -263,7 +278,7 @@ class Color:
 
     @cached_property
     def rgb(self) -> RGB:
-        r1, r2, g1, g2, b1, b2 = list(self.hex)
+        r1, r2, g1, g2, b1, b2 = iter(self.hex)
         return RGB(int(r1 + r2, 16), int(g1 + g2, 16), int(b1 + b2, 16))
 
     @cached_property
