@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar, Literal, Self, overload
 
-from hsluv import hex_to_hsluv, hsluv_to_hex, hsluv_to_rgb, rgb_to_hsluv
+from hsluv import hex_to_hsluv, hsluv_to_hex
 
 from .calx import fractions, trim
 
@@ -169,8 +169,24 @@ class Color:
         '030303'
         >>> Color.from_hex("303").hex
         '330033'
-        >>> Color.from_hex("808303").hex
+        >>> c = Color.from_hex("808303")
+        >>> c
+        Color(hue=87.89°, saturation=99.48%, lightness=52.76%)
+        >>> [f"{v:.3f}" for v in c.hsluv_tuple]
+        ['87.891', '99.484', '52.761']
+        >>> c.hex
         '808303'
+        >>> c.rgb
+        RGB(red=128, green=131, blue=3)
+        >>> c2 = Color.from_hex("0af")
+        >>> c2
+        Color(hue=243.16°, saturation=100.00%, lightness=66.50%)
+        >>> [f"{v:.3f}" for v in c2.hsluv_tuple]
+        ['243.162', '100.000', '66.495']
+        >>> c2.hex
+        '00aaff'
+        >>> c2.rgb
+        RGB(red=0, green=170, blue=255)
         """
         if rgb_hex is None:
             return None
@@ -222,19 +238,33 @@ class Color:
 
         >>> Color.from_rgb(None) is None
         True
-        >>> Color.from_rgb(RGB(128, 131, 3)).rgb
+        >>> c = Color.from_rgb(RGB(128, 131, 3))
+        >>> c
+        Color(hue=87.89°, saturation=99.48%, lightness=52.76%)
+        >>> [f"{v:.3f}" for v in c.hsluv_tuple]
+        ['87.891', '99.484', '52.761']
+        >>> c.hex
+        '808303'
+        >>> c.rgb
         RGB(red=128, green=131, blue=3)
+        >>> c2 = Color.from_rgb(RGB(0, 170, 255))
+        >>> c2
+        Color(hue=243.16°, saturation=100.00%, lightness=66.50%)
+        >>> [f"{v:.3f}" for v in c2.hsluv_tuple]
+        ['243.162', '100.000', '66.495']
+        >>> c2.hex
+        '00aaff'
+        >>> c2.rgb
+        RGB(red=0, green=170, blue=255)
         """
         if rgb is None:
             return None
-        return cls.from_hsluv_tuple(
-            rgb_to_hsluv((rgb.red / 255, rgb.green / 255, rgb.blue / 255))
-        )
+        return cls.from_hex(f"{rgb.red:02x}{rgb.green:02x}{rgb.blue:02x}")
 
     @cached_property
     def rgb(self) -> RGB:
-        r, g, b = hsluv_to_rgb(self.hsluv_tuple)
-        return RGB(round(r * 255), round(g * 255), round(b * 255))
+        r1, r2, g1, g2, b1, b2 = list(self.hex)
+        return RGB(int(r1 + r2, 16), int(g1 + g2, 16), int(b1 + b2, 16))
 
     @cached_property
     def contrasting_shade(self) -> Self:
