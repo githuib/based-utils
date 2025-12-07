@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
 type Lines = Iterable[str]
+type Animation = Callable[[Lines, int, int], Lines]
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,7 @@ class AnimParams:
     crop_to_terminal: bool = False
 
 
-def refresh_lines(lines: Lines, *, crop_to_terminal: bool = True) -> int:
+def write_lines(lines: Lines, *, crop_to_terminal: bool = True) -> int:
     block = list(lines)
     height = len(block)
     if crop_to_terminal:
@@ -45,6 +46,15 @@ def clear_lines(amount: int) -> None:
         sys.stdout.write(LINE_UP + LINE_CLEAR)
 
 
+def refresh_lines(
+    lines: Lines, *, fps: float = None, crop_to_terminal: bool = True
+) -> None:
+    lines_written = write_lines(lines, crop_to_terminal=crop_to_terminal)
+    if fps:
+        time.sleep(1 / fps)
+    clear_lines(lines_written)
+
+
 def animate[T](
     items: Iterable[T],
     format_item: Callable[[T], Lines] | None = None,
@@ -53,6 +63,7 @@ def animate[T](
 ) -> Iterator[T]:
     if params is None:
         params = AnimParams()
+    crop = params.crop_to_terminal
 
     def to_lines(item_: T) -> Lines:
         if format_item is None:
@@ -62,24 +73,14 @@ def animate[T](
         return format_item(item_)
 
     with suppress(KeyboardInterrupt):
-        lines_written = 0
+        lines: Lines = []
         for i, item in enumerate(items):
             yield item
-            if i % params.only_every_nth != 0:
-                continue
-
-            clear_lines(lines_written)
-            lines_written = refresh_lines(
-                to_lines(item), crop_to_terminal=params.crop_to_terminal
-            )
-            if params.fps:
-                time.sleep(1 / params.fps)
-
-        if not params.keep_last:
-            clear_lines(lines_written)
-
-
-type Animation = Callable[[Lines, int, int], Lines]
+            if i % params.only_every_nth == 0:
+                lines = list(to_lines(item))
+                refresh_lines(lines, fps=params.fps, crop_to_terminal=crop)
+        if params.keep_last:
+            write_lines(lines, crop_to_terminal=crop)
 
 
 def animated(
