@@ -23,7 +23,7 @@ class AnimationParams:
     fps: int | None = None
     keep_last: bool = True
     only_every_nth: int = 1
-    crop_to_terminal: bool = True
+    crop_to_terminal: bool = False
 
 
 def refresh_lines(lines: Lines, *, crop_to_terminal: bool = True) -> int:
@@ -33,7 +33,7 @@ def refresh_lines(lines: Lines, *, crop_to_terminal: bool = True) -> int:
         # Could be nice to crop to width as well, but it seems
         # to me vertical cropping is a bit quirky now anyway.
         _max_width, max_height = get_terminal_size()
-        height = min(max_height, height)
+        height = min(max_height - 1, height)
     for line in block[-height:]:
         sys.stdout.write(line + "\n")
     return height
@@ -88,7 +88,7 @@ def animated(
         max_width, max_height = get_terminal_size()
 
         block = list(lines)
-        height = min(len(block), max_height)
+        height = min(len(block), max_height - 1)
         block = block[-height:]
         block_width = max(len(line) for line in block)
 
