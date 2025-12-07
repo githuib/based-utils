@@ -146,7 +146,7 @@ class Color:
     hues: ClassVar[Hues] = HUES
 
     def __repr__(self) -> str:
-        return repr(self.hsluv)
+        return repr(self._hsluv)
 
     @classmethod
     def from_fields(
@@ -185,13 +185,13 @@ class Color:
         return cls.from_fields(lightness=lightness, saturation=0)
 
     @classmethod
-    def from_hsluv(cls, hsluv: _HSLuv | None) -> Self | None:
+    def _from_hsluv(cls, hsluv: _HSLuv | None) -> Self | None:
         if hsluv is None:
             return None
         return cls(hsluv.lightness / 100, hsluv.saturation / 100, hsluv.hue / 360)
 
     @cached_property
-    def hsluv(self) -> _HSLuv:
+    def _hsluv(self) -> _HSLuv:
         return _HSLuv(self.hue * 360, self.saturation * 100, self.lightness * 100)
 
     @overload
@@ -233,11 +233,11 @@ class Color:
         >>> c2.rgb
         RGB(red=0, green=170, blue=255)
         """
-        return cls.from_hsluv(_HSLuv.from_hex(rgb_hex))
+        return cls._from_hsluv(_HSLuv.from_hex(rgb_hex))
 
     @cached_property
     def hex(self) -> str:
-        return self.hsluv.hex
+        return self._hsluv.hex
 
     @overload
     @classmethod
