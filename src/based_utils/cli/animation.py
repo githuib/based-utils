@@ -28,7 +28,7 @@ class AnimParams:
     crop_to_terminal: bool = False
 
 
-def write_lines(lines: Lines, *, crop_to_terminal: bool = True) -> int:
+def write_lines(lines: Lines, *, crop_to_terminal: bool = False) -> int:
     block = list(lines)
     height = len(block)
     if crop_to_terminal:
@@ -47,7 +47,7 @@ def clear_lines(amount: int) -> None:
 
 
 def refresh_lines(
-    lines: Lines, *, fps: float = None, crop_to_terminal: bool = True
+    lines: Lines, *, fps: float = None, crop_to_terminal: bool = False
 ) -> None:
     lines_written = write_lines(lines, crop_to_terminal=crop_to_terminal)
     if fps:
@@ -125,10 +125,10 @@ def moving_forward(frame_0: Lines, n: int, n_frames: int) -> Lines:
 def fuck_me_sideways(frame_0: Lines, n: int, n_frames: int) -> Lines:
     n %= n_frames
     lines = list(frame_0)
-    h = len(lines) - 1
-    hh = h // 2
+    height = len(lines) - 1
+    half_height = height // 2
     for y, line in enumerate(lines):
-        x = n * -(((hh + y) % h) - hh)
+        x = n * (half_height - ((half_height + y) % height))
         yield line[x:] + line[:x]
 
 
@@ -156,7 +156,7 @@ def changing_colors(*, amount_of_hues: int = 360) -> Animation:
 def flashing(
     *,
     amount_of_hues: int = 360,
-    intensity: float = 303_909_303 / 10**10,
+    intensity: float = 0.03,
     fg: Color = None,
     bg: Color = None,
 ) -> Animation:
