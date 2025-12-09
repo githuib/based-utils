@@ -1,131 +1,165 @@
-from dataclasses import dataclass, replace
-from functools import cached_property
+from dataclasses import astuple, dataclass, replace
+from functools import cached_property, total_ordering
 from typing import Self
 
 from hsluv import hex_to_hsluv, hsluv_to_hex
 
-from .calx import interpolate, interpolate_angle, trim
+from .calx import interpolate, interpolate_cyclic, trim
+
+
+def _normalize_rgb_hex(rgb_hex: str) -> str:
+    """
+    Try to normalize a hex string into a rrggbb hex.
+
+    :param rgb_hex: RGB hex string (may start with '#')
+    :return: rrggbb hex
+
+    >>> _normalize_rgb_hex("3")
+    '333333'
+    >>> _normalize_rgb_hex("03")
+    '030303'
+    >>> _normalize_rgb_hex("303")
+    '330033'
+    >>> _normalize_rgb_hex("808303")
+    '808303'
+    """
+    rgb_hex = rgb_hex.removeprefix("#").lower()
+
+    if len(rgb_hex) == 1:
+        # 3 -> r=33, g=33, b=33
+        r = g = b = rgb_hex * 2
+
+    elif len(rgb_hex) == 2:
+        # 03 -> r=03, g=03, b=03
+        r = g = b = rgb_hex
+
+    elif len(rgb_hex) == 3:
+        # 303 -> r=33, g=00, b=33
+        r1, g1, b1 = iter(rgb_hex)
+        r, g, b = r1 * 2, g1 * 2, b1 * 2
+
+    elif len(rgb_hex) == 6:
+        # 808303 -> r=80, g=83, b=03
+        r1, r2, g1, g2, b1, b2 = iter(rgb_hex)
+        r, g, b = r1 + r2, g1 + g2, b1 + b2
+
+    else:
+        raise ValueError(rgb_hex)
+
+    return f"{r}{g}{b}"
 
 
 @dataclass(frozen=True)
-class RGB:
+class _RGB:
     red: int
     green: int
     blue: int
 
 
-type HSLuv = tuple[float, float, float]
+@dataclass(frozen=True)
+class _HSLuv:
+    hue: float
+    saturation: float
+    lightness: float
+
+    def __repr__(self) -> str:
+        hue = f"hue={self.hue:.2f}°"
+        saturation = f"saturation={self.saturation:.2f}%"
+        lightness = f"lightness={self.lightness:.2f}%"
+        return f"Color({hue}, {saturation}, {lightness})"
+
+    @classmethod
+    def from_hex(cls, rgb_hex: str) -> _HSLuv:
+        return cls(*hex_to_hsluv(f"#{rgb_hex}"))
+
+    @cached_property
+    def as_hex(self) -> str:
+        return hsluv_to_hex(astuple(self))[1:]
 
 
 @dataclass(frozen=True)
-class _HSLuvColor:
+class _Color:
+    """Party trick to allow __post_init__() to set the attributes."""
+
     hue: float = 0  # 0 - 1 (full circle angle)
     saturation: float = 1  # 0 - 1 (ratio)
     lightness: float = 0.5  # 0 - 1 (ratio)
 
-    def __repr__(self) -> str:
-        hue, sat, li = self._hsluv
-        return f"Color(hue={hue:.2f}°, saturation={sat:.2f}%, lightness={li:.2f}%)"
 
-    @classmethod
-    def _from_hsluv(cls, hsluv: HSLuv) -> Self:
-        hue, sat, li = hsluv
-        return cls(hue / 360, sat / 100, li / 100)
+@total_ordering
+@dataclass(frozen=True)
+class Color(_Color):
+    def __post_init__(self) -> None:
+        super().__init__(self.hue % 1, trim(self.saturation), trim(self.lightness))
+
+    def __repr__(self) -> str:
+        return repr(self._as_hsluv)
+
+    def __lt__(self, other: Self) -> bool:
+        return self.as_sortable_tuple < other.as_sortable_tuple
 
     @cached_property
-    def _hsluv(self) -> HSLuv:
-        return self.hue * 360, self.saturation * 100, self.lightness * 100
+    def as_sortable_tuple(self) -> tuple[float, float, float]:
+        return self.lightness, self.saturation, self.hue
+
+    @classmethod
+    def _from_hsluv(cls, hsluv: _HSLuv) -> Self:
+        return cls(hsluv.hue / 360, hsluv.saturation / 100, hsluv.lightness / 100)
+
+    @cached_property
+    def _as_hsluv(self) -> _HSLuv:
+        return _HSLuv(self.hue * 360, self.saturation * 100, self.lightness * 100)
 
     @classmethod
     def from_hex(cls, rgb_hex: str) -> Self:
         """
         Create a Color from an RGB hex string.
 
-        :param rgb_hex: RGB hex string (may start with '#') or None
+        :param rgb_hex: RGB hex string (may start with '#')
         :return: Color instance
 
-        >>> Color.from_hex("3").hex
-        '333333'
-        >>> Color.from_hex("03").hex
-        '030303'
-        >>> Color.from_hex("303").hex
-        '330033'
-        >>> c = Color.from_hex("808303")
-        >>> c.hex
+        >>> c1 = Color.from_hex("808303")
+        >>> c1.as_hex
         '808303'
-        >>> c.rgb
-        RGB(red=128, green=131, blue=3)
+        >>> c1.as_rgb
+        _RGB(red=128, green=131, blue=3)
         >>> c2 = Color.from_hex("0af")
-        >>> c2.hex
+        >>> c2.as_hex
         '00aaff'
-        >>> c2.rgb
-        RGB(red=0, green=170, blue=255)
+        >>> c2.as_rgb
+        _RGB(red=0, green=170, blue=255)
         """
-        rgb_hex = rgb_hex.removeprefix("#").lower()
-
-        if len(rgb_hex) == 1:
-            # 3 -> r=33, g=33, b=33
-            r = g = b = rgb_hex * 2
-
-        elif len(rgb_hex) == 2:
-            # 03 -> r=03, g=03, b=03
-            r = g = b = rgb_hex
-
-        elif len(rgb_hex) == 3:
-            # 303 -> r=33, g=00, b=33
-            r1, g1, b1 = iter(rgb_hex)
-            r, g, b = r1 * 2, g1 * 2, b1 * 2
-
-        elif len(rgb_hex) == 6:
-            # 808303 -> r=80, g=83, b=03
-            r1, r2, g1, g2, b1, b2 = iter(rgb_hex)
-            r, g, b = r1 + r2, g1 + g2, b1 + b2
-
-        else:
-            raise ValueError(rgb_hex)
-
-        return cls._from_hsluv(hex_to_hsluv(f"#{r}{g}{b}"))
+        return cls._from_hsluv(_HSLuv.from_hex(_normalize_rgb_hex(rgb_hex)))
 
     @cached_property
-    def hex(self) -> str:
-        return hsluv_to_hex(self._hsluv)[1:]
+    def as_hex(self) -> str:
+        return self._as_hsluv.as_hex
 
     @classmethod
-    def from_rgb(cls, rgb: RGB) -> Self:
+    def from_rgb(cls, rgb: _RGB) -> Self:
         """
         Create a Color from RGB values.
 
-        :param rgb: RGB instance or None
+        :param rgb: RGB instance
         :return: Color instance
 
-        >>> c = Color.from_rgb(RGB(128, 131, 3))
-        >>> c.hex
+        >>> c = Color.from_rgb(_RGB(128, 131, 3))
+        >>> c.as_hex
         '808303'
-        >>> c.rgb
-        RGB(red=128, green=131, blue=3)
-        >>> c2 = Color.from_rgb(RGB(0, 170, 255))
-        >>> c2.hex
+        >>> c.as_rgb
+        _RGB(red=128, green=131, blue=3)
+        >>> c2 = Color.from_rgb(_RGB(0, 170, 255))
+        >>> c2.as_hex
         '00aaff'
-        >>> c2.rgb
-        RGB(red=0, green=170, blue=255)
+        >>> c2.as_rgb
+        _RGB(red=0, green=170, blue=255)
         """
         return cls.from_hex(f"{rgb.red:02x}{rgb.green:02x}{rgb.blue:02x}")
 
     @cached_property
-    def rgb(self) -> RGB:
-        r1, r2, g1, g2, b1, b2 = iter(self.hex)
-        return RGB(int(r1 + r2, 16), int(g1 + g2, 16), int(b1 + b2, 16))
-
-
-class Color(_HSLuvColor):
-    def __post_init__(self) -> None:
-        super().__init__(trim(self.lightness), trim(self.saturation), self.hue % 1)
-
-    def _copy(
-        self, *, hue: float = None, saturation: float = None, lightness: float = None
-    ) -> Color:
-        kwargs = {"lightness": lightness, "saturation": saturation, "hue": hue}
-        return replace(self, **{k: v for k, v in kwargs.items() if v is not None})
+    def as_rgb(self) -> _RGB:
+        r1, r2, g1, g2, b1, b2 = iter(self.as_hex)
+        return _RGB(int(r1 + r2, 16), int(g1 + g2, 16), int(b1 + b2, 16))
 
     def adjust(
         self, *, hue: float = None, saturation: float = None, lightness: float = None
@@ -137,10 +171,10 @@ class Color(_HSLuvColor):
         )
 
     def shade(self, lightness: float) -> Color:
-        return self._copy(lightness=lightness)
+        return replace(self, lightness=lightness)
 
     def saturated(self, saturation: float) -> Color:
-        return self._copy(saturation=saturation)
+        return replace(self, saturation=saturation)
 
     @cached_property
     def very_bright(self) -> Color:
@@ -166,7 +200,7 @@ class Color(_HSLuvColor):
 
     def blend(self, other: Color, amount: float = 0.5) -> Color:
         return Color(
-            interpolate_angle(amount, (self.hue, other.hue)),
+            interpolate_cyclic(amount, (self.hue, other.hue), period=1),
             interpolate(amount, (self.saturation, other.saturation)),
             interpolate(amount, (self.lightness, other.lightness)),
         )
@@ -182,17 +216,17 @@ class Color(_HSLuvColor):
 
         :return: Color representation of the contrasting shade
 
-        >>> Color.from_hex("08f").contrasting_shade.hex
+        >>> Color.from_hex("08f").contrasting_shade.as_hex
         '001531'
-        >>> Color.from_hex("0f8").contrasting_shade.hex
+        >>> Color.from_hex("0f8").contrasting_shade.as_hex
         '006935'
-        >>> Color.from_hex("80f").contrasting_shade.hex
+        >>> Color.from_hex("80f").contrasting_shade.as_hex
         'ebe4ff'
-        >>> Color.from_hex("8f0").contrasting_shade.hex
+        >>> Color.from_hex("8f0").contrasting_shade.as_hex
         '366b00'
-        >>> Color.from_hex("f08").contrasting_shade.hex
+        >>> Color.from_hex("f08").contrasting_shade.as_hex
         '2b0012'
-        >>> Color.from_hex("f80").contrasting_shade.hex
+        >>> Color.from_hex("f80").contrasting_shade.as_hex
         '4a2300'
         """
         return self.shade((self.lightness + 0.5) % 1)
@@ -207,17 +241,17 @@ class Color(_HSLuvColor):
 
         :return: Color representation of the contrasting hue
 
-        >>> Color.from_hex("08f").contrasting_hue.hex
+        >>> Color.from_hex("08f").contrasting_hue.as_hex
         '9c8900'
-        >>> Color.from_hex("0f8").contrasting_hue.hex
+        >>> Color.from_hex("0f8").contrasting_hue.as_hex
         'ffd1f5'
-        >>> Color.from_hex("80f").contrasting_hue.hex
+        >>> Color.from_hex("80f").contrasting_hue.as_hex
         '5c6900'
-        >>> Color.from_hex("8f0").contrasting_hue.hex
+        >>> Color.from_hex("8f0").contrasting_hue.as_hex
         'f6d9ff'
-        >>> Color.from_hex("f08").contrasting_hue.hex
+        >>> Color.from_hex("f08").contrasting_hue.as_hex
         '009583'
-        >>> Color.from_hex("f80").contrasting_hue.hex
+        >>> Color.from_hex("f80").contrasting_hue.as_hex
         '00b8d1'
         """
         return self.adjust(hue=0.5)
@@ -262,7 +296,7 @@ class Colors(ColorTheme):
     purple = c(281)
     pink = c(329)
 
-    brown = orange.blend(yellow, 0.25).saturated(0.5)
+    brown = orange.blend(yellow)
 
 
 class AltColors(ColorTheme):
@@ -279,4 +313,4 @@ class AltColors(ColorTheme):
     purple = c(280)
     pink = c(325)
 
-    brown = orange.blend(yellow, 0.25).saturated(0.5)
+    brown = orange.blend(yellow)

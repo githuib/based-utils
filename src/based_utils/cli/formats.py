@@ -72,9 +72,9 @@ class Colored:
     def formatted(self) -> str:
         s = str(self.value)
         if self.color:
-            s = chalk.hex(self.color.hex)(s)
+            s = chalk.hex(self.color.as_hex)(s)
         if self.background:
-            s = chalk.bg_hex(self.background.hex)(s)
+            s = chalk.bg_hex(self.background.as_hex)(s)
         return s
 
     def __repr__(self) -> str:
