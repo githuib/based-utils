@@ -146,7 +146,7 @@ def _colorful(
 
 def changing_colors(*, amount_of_hues: int = 360) -> Animation:
     def colors(_n: float, hue: float) -> tuple[Color, Color]:
-        fg = Color.from_fields(hue=hue, lightness=0.75)
+        fg = Color(hue, lightness=0.75)
         bg = fg.contrasting_hue.contrasting_shade
         return fg, bg
 
@@ -163,12 +163,11 @@ def flashing(
     def colors(n: float, hue: float) -> tuple[Color, Color]:
         flash_ratio = 3
         flash = n % flash_ratio == 0 and randf() < intensity * flash_ratio
-        c_fg = Color.from_fields(hue=hue, lightness=0.5) if fg is None else fg
-        c_bg = c_fg.shade(0.2) if bg is None else bg
+        c = Color(hue)
+        c_fg, c_bg = fg or c.shade(0.5), bg or c.shade(0.2)
         if flash:
-            hue = hue + 0.5 if fg is None else randf()
-            c_fg = c_fg.but_with(hue=hue, lightness=0.3)
-            c_bg = c_bg.but_with(hue=hue, lightness=0.9)
+            c_flash = Color(hue + 0.5 if fg else randf())
+            c_fg, c_bg = c_flash.shade(0.3), c_flash.shade(0.9)
         return c_fg, c_bg
 
     return _colorful(colors, amount_of_hues=amount_of_hues)
