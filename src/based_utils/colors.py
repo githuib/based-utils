@@ -286,12 +286,12 @@ class Colors(ColorTheme):
     """Highly opinionated (though carefully selected) color theme."""
 
     red = c(12)
-    orange = c(29)
-    yellow = c(68)
+    orange = c(33)
+    yellow = c(69)
     poison = c(101)
     green = c(127)
-    ocean = c(182)
-    blue = c(244)
+    ocean = c(190)
+    blue = c(248)
     indigo = c(267)
     purple = c(281)
     pink = c(329)
