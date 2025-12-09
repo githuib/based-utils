@@ -1,13 +1,10 @@
 from dataclasses import dataclass, replace
 from functools import cached_property
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from hsluv import hex_to_hsluv, hsluv_to_hex
 
-from .calx import fractions, trim
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
+from .calx import interpolate, interpolate_angle, trim
 
 
 @dataclass(frozen=True)
@@ -130,28 +127,6 @@ class Color(_HSLuvColor):
         kwargs = {"lightness": lightness, "saturation": saturation, "hue": hue}
         return replace(self, **{k: v for k, v in kwargs.items() if v is not None})
 
-    def shade(self, lightness: float) -> Color:
-        return self._copy(lightness=lightness)
-
-    def saturated(self, saturation: float) -> Color:
-        return self._copy(saturation=saturation)
-
-    def shades(self, n: int, *, inclusive: bool = False) -> Iterator[Color]:
-        """
-        Generate n shades of this color.
-
-        :param n: amount of shades generated
-        :param inclusive: if we want to include 0 and 1 or not
-        :return: iterator of shades
-
-        >>> [c.hex for c in Color.from_hex("08f").shades(5)]
-        ['002955', '004e97', '0076e0', '6ca2ff', 'bccfff']
-        >>> [c.hex for c in Color.from_hex("08f").shades(5, inclusive=True)]
-        ['000000', '002955', '004e97', '0076e0', '6ca2ff', 'bccfff', 'ffffff']
-        """
-        for lightness in fractions(n, inclusive=inclusive):
-            yield self.shade(lightness)
-
     def adjust(
         self, *, hue: float = None, saturation: float = None, lightness: float = None
     ) -> Color:
@@ -161,11 +136,40 @@ class Color(_HSLuvColor):
             self.lightness * (lightness or 1),
         )
 
-    def brighter(self, relative_amount: float) -> Color:
+    def shade(self, lightness: float) -> Color:
+        return self._copy(lightness=lightness)
+
+    def saturated(self, saturation: float) -> Color:
+        return self._copy(saturation=saturation)
+
+    @cached_property
+    def very_bright(self) -> Color:
+        return self.shade(5 / 6)
+
+    @cached_property
+    def bright(self) -> Color:
+        return self.shade(4 / 6)
+
+    @cached_property
+    def dark(self) -> Color:
+        return self.shade(2 / 6)
+
+    @cached_property
+    def very_dark(self) -> Color:
+        return self.shade(1 / 6)
+
+    def brighter(self, relative_amount: float = 1.5) -> Color:
         return self.adjust(lightness=relative_amount)
 
-    def darker(self, relative_amount: float) -> Color:
+    def darker(self, relative_amount: float = 1.5) -> Color:
         return self.brighter(1 / relative_amount)
+
+    def blend(self, other: Color, amount: float = 0.5) -> Color:
+        return Color(
+            interpolate_angle(amount, (self.hue, other.hue)),
+            interpolate(amount, (self.saturation, other.saturation)),
+            interpolate(amount, (self.lightness, other.lightness)),
+        )
 
     @cached_property
     def contrasting_shade(self) -> Color:
@@ -244,7 +248,6 @@ class ColorTheme:
     white = grey.shade(1)
 
 
-@dataclass(frozen=True)
 class Colors(ColorTheme):
     """Highly opinionated (though carefully selected) color theme."""
 
@@ -259,10 +262,9 @@ class Colors(ColorTheme):
     purple = c(281)
     pink = c(329)
 
-    brown = orange.saturated(0.35)
+    brown = orange.blend(yellow, 0.25).saturated(0.5)
 
 
-@dataclass(frozen=True)
 class AltColors(ColorTheme):
     """Alternative color theme."""
 
@@ -277,4 +279,4 @@ class AltColors(ColorTheme):
     purple = c(280)
     pink = c(325)
 
-    brown = orange.saturated(0.35)
+    brown = orange.blend(yellow, 0.25).saturated(0.5)
