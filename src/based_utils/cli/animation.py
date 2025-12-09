@@ -167,7 +167,7 @@ def flashing(
         c_fg, c_bg = fg or c.shade(0.5), bg or c.shade(0.2)
         if flash:
             c_flash = Color(hue + 0.5 if fg else randf())
-            c_fg, c_bg = c_flash.shade(0.3), c_flash.shade(0.9)
+            c_fg, c_bg = c_flash.shade(0.3), c_flash.shade(0.8)
         return c_fg, c_bg
 
     return _colorful(colors, amount_of_hues=amount_of_hues)
