@@ -1,4 +1,4 @@
-from .animation import Lines, animate, animated
+from .animation import LazyItems, Lines, animate, animate_iter, animated
 from .args import (
     check_integer,
     check_integer_in_range,
@@ -15,6 +15,7 @@ __all__ = [
     "Colored",
     "ConsoleHandlers",
     "FatalError",
+    "LazyItems",
     "Lines",
     "LogLevel",
     "LogMeister",
@@ -22,6 +23,7 @@ __all__ = [
     "align_left",
     "align_right",
     "animate",
+    "animate_iter",
     "animated",
     "char_len",
     "check_integer",
