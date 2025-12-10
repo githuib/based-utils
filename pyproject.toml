@@ -1,6 +1,6 @@
 [project]
 name = "based-utils"
-version = "0.9.9"
+version = "0.10.0"
 description = "Add your description here"
 authors = [
   { name = "Huib Piguillet", email = "huib@proton.me" }
