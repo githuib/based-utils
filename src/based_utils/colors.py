@@ -50,7 +50,7 @@ def _normalize_rgb_hex(rgb_hex: str) -> str:
     return f"{r}{g}{b}"
 
 
-type _RGB = tuple[int, int, int]
+type RGB = tuple[int, int, int]
 
 
 @dataclass(frozen=True)
@@ -74,12 +74,12 @@ class _HSLuv:
         return hsluv_to_hex(astuple(self))[1:]
 
     @classmethod
-    def from_rgb(cls, rgb: _RGB) -> _HSLuv:
+    def from_rgb(cls, rgb: RGB) -> _HSLuv:
         r, g, b = rgb
         return cls(*rgb_to_hsluv((r / 255, g / 255, b / 255)))
 
     @cached_property
-    def as_rgb(self) -> _RGB:
+    def as_rgb(self) -> RGB:
         r, g, b = hsluv_to_rgb(astuple(self))
         return round(r * 255), round(g * 255), round(b * 255)
 
@@ -143,7 +143,7 @@ class Color(_Color):
         return self._as_hsluv.as_hex
 
     @classmethod
-    def from_rgb(cls, rgb: _RGB) -> Color:
+    def from_rgb(cls, rgb: RGB) -> Color:
         """
         Create a Color from RGB values.
 
@@ -164,7 +164,7 @@ class Color(_Color):
         return cls._from_hsluv(_HSLuv.from_rgb(rgb))
 
     @cached_property
-    def as_rgb(self) -> _RGB:
+    def as_rgb(self) -> RGB:
         return self._as_hsluv.as_rgb
 
     def adjust(
