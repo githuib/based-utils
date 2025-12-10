@@ -8,6 +8,8 @@ from itertools import count
 from os import get_terminal_size
 from typing import TYPE_CHECKING, cast
 
+from more_itertools.recipes import consume
+
 from based_utils.calx import randf
 from based_utils.colors import Color
 
@@ -55,7 +57,7 @@ def refresh_lines(
     clear_lines(lines_written)
 
 
-def animate[T](
+def animate_iter[T](
     items: Iterable[T],
     format_item: Callable[[T], Lines] | None = None,
     *,
@@ -81,6 +83,15 @@ def animate[T](
                 refresh_lines(lines, fps=params.fps, crop_to_terminal=crop)
         if params.keep_last:
             write_lines(lines, crop_to_terminal=crop)
+
+
+def animate[T](
+    items: Iterable[T],
+    format_item: Callable[[T], Lines] | None = None,
+    *,
+    params: AnimParams = None,
+) -> None:
+    consume(animate_iter(items, format_item, params=params))
 
 
 def animated(
