@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 type Lines = Iterable[str]
 type Animation = Callable[[Lines, int, int], Lines]
+type LazyItems[T] = Callable[[], Iterable[T]]
 
 
 @dataclass(frozen=True)
@@ -58,7 +59,7 @@ def refresh_lines(
 
 
 def animate_iter[T](
-    items: Iterable[T],
+    items: LazyItems[T],
     format_item: Callable[[T], Lines] | None = None,
     *,
     params: AnimParams = None,
@@ -76,7 +77,7 @@ def animate_iter[T](
 
     with suppress(KeyboardInterrupt):
         lines: Lines = []
-        for i, item in enumerate(items):
+        for i, item in enumerate(items()):
             yield item
             if i % params.only_every_nth == 0:
                 lines = list(to_lines(item))
@@ -86,7 +87,7 @@ def animate_iter[T](
 
 
 def animate[T](
-    items: Iterable[T],
+    items: LazyItems[T],
     format_item: Callable[[T], Lines] | None = None,
     *,
     params: AnimParams = None,
