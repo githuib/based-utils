@@ -13,16 +13,16 @@ if TYPE_CHECKING:
 
     from based_utils.colors import Color
 
-
-_ANSI_STYLE_REGEX = re.compile(r"\x1b\[\d+(;\d+)*m")
+ANSI_ESCAPE = "\x1b"
+_ANSI_STYLE_REGEX = re.compile(rf"{ANSI_ESCAPE}\[\d+(;\d+)*m")
 
 
 def ansi(s: str) -> str:
-    return f"\x1b[{s}"
+    return f"{ANSI_ESCAPE}[{s}"
 
 
-def ansi_style(*v: int) -> str:
-    return ansi(";".join(str(v)) + "m")
+def ansi_style(*values: int) -> str:
+    return ansi(f"{';'.join(str(v) for v in values)}m")
 
 
 LINE_UP = ansi("A")
@@ -39,9 +39,9 @@ def has_colors() -> bool:
     return not no and (yes or maybe)
 
 
-def _wrap_ansi_code(value: int) -> Callable[[str], str]:
+def _wrap_ansi_style(*values: int) -> Callable[[str], str]:
     def wrapper(s: str) -> str:
-        return f"{ansi_style(value)}{s}{RESET_STYLE}" if has_colors() else s
+        return f"{ansi_style(*values)}{s}{RESET_STYLE}" if has_colors() else s
 
     return wrapper
 
@@ -50,26 +50,26 @@ def strip_ansi_style(s: str) -> str:
     return _ANSI_STYLE_REGEX.sub("", s)
 
 
-bright = _wrap_ansi_code(1)
-dim = _wrap_ansi_code(2)
+bright = _wrap_ansi_style(1)
+dim = _wrap_ansi_style(2)
 
-black = _wrap_ansi_code(30)
-red = _wrap_ansi_code(31)
-green = _wrap_ansi_code(32)
-yellow = _wrap_ansi_code(33)
-blue = _wrap_ansi_code(34)
-magenta = _wrap_ansi_code(35)
-cyan = _wrap_ansi_code(36)
-gray = _wrap_ansi_code(37)
+black = _wrap_ansi_style(30)
+red = _wrap_ansi_style(31)
+green = _wrap_ansi_style(32)
+yellow = _wrap_ansi_style(33)
+blue = _wrap_ansi_style(34)
+magenta = _wrap_ansi_style(35)
+cyan = _wrap_ansi_style(36)
+gray = _wrap_ansi_style(37)
 
-light_gray = _wrap_ansi_code(90)
-light_red = _wrap_ansi_code(91)
-light_green = _wrap_ansi_code(92)
-light_yellow = _wrap_ansi_code(93)
-light_blue = _wrap_ansi_code(94)
-light_magenta = _wrap_ansi_code(95)
-light_cyan = _wrap_ansi_code(96)
-white = _wrap_ansi_code(97)
+light_gray = _wrap_ansi_style(90)
+light_red = _wrap_ansi_style(91)
+light_green = _wrap_ansi_style(92)
+light_yellow = _wrap_ansi_style(93)
+light_blue = _wrap_ansi_style(94)
+light_magenta = _wrap_ansi_style(95)
+light_cyan = _wrap_ansi_style(96)
+white = _wrap_ansi_style(97)
 
 OK = green("✔")
 FAIL = red("✘")
