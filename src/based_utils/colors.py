@@ -6,6 +6,8 @@ from hsluv import hex_to_hsluv, hsluv_to_hex
 
 from .calx import interpolate, interpolate_cyclic, trim
 
+_INCREASE_FACTOR = 2**0.5
+
 
 def _normalize_rgb_hex(rgb_hex: str) -> str:
     """
@@ -192,11 +194,27 @@ class Color(_Color):
     def very_dark(self) -> Color:
         return self.shade(1 / 6)
 
-    def brighter(self, relative_amount: float = 1.5) -> Color:
+    def brighter(self, relative_amount: float = _INCREASE_FACTOR) -> Color:
         return self.adjust(lightness=relative_amount)
 
-    def darker(self, relative_amount: float = 1.5) -> Color:
+    @cached_property
+    def slightly_brighter(self) -> Color:
+        return self.brighter(_INCREASE_FACTOR**0.5)
+
+    @cached_property
+    def much_brighter(self) -> Color:
+        return self.brighter(_INCREASE_FACTOR**2)
+
+    def darker(self, relative_amount: float = _INCREASE_FACTOR) -> Color:
         return self.brighter(1 / relative_amount)
+
+    @cached_property
+    def slightly_darker(self) -> Color:
+        return self.darker(_INCREASE_FACTOR**0.5)
+
+    @cached_property
+    def much_darker(self) -> Color:
+        return self.darker(_INCREASE_FACTOR**2)
 
     def blend(self, other: Color, amount: float = 0.5) -> Color:
         return Color(
