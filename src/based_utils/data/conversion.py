@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Callable, Iterable, Iterator, Mapping
 
 
 @overload
@@ -19,6 +19,12 @@ def try_convert[T, R](cls: Callable[[T], R], val: T, *, default: R = None) -> R 
         return cls(val)
     except ValueError:
         return default
+
+
+def get_class_vars[T](cls: type, value_type: type[T]) -> Iterator[tuple[str, T]]:
+    for k, c in cls.__dict__.items():
+        if not k.startswith("_") and isinstance(c, value_type):
+            yield k, c
 
 
 def compose_number(numbers: Iterable[int]) -> int:
