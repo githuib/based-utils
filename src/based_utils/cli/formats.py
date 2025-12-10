@@ -59,7 +59,6 @@ def strip_ansi_style(s: str) -> str:
 
 bold = _wrap_ansi_style(1)
 faint = _wrap_ansi_style(2)
-bright, dim = bold, faint
 italic = _wrap_ansi_style(3)
 underlined = _wrap_ansi_style(4)
 inverse = _wrap_ansi_style(7)
