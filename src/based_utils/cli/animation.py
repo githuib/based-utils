@@ -139,7 +139,7 @@ def _colorful(
         hue = n / amount_of_hues
         fg, bg = colors(n, hue)
         for line in frame_0:
-            yield Colored(line, fg, bg).formatted
+            yield str(Colored(line, fg, bg))
 
     return anim
 

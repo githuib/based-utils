@@ -1,8 +1,10 @@
 import os
+import re
 import sys
 from dataclasses import dataclass
 from functools import cache, cached_property
 from typing import TYPE_CHECKING
+from unicodedata import east_asian_width
 
 from yachalk import chalk
 
@@ -12,8 +14,21 @@ if TYPE_CHECKING:
     from based_utils.colors import Color
 
 
-LINE_UP = "\033[1A"
-LINE_CLEAR = "\x1b[2K"
+_ANSI_STYLE_REGEX = re.compile(r"\x1b\[\d+(;\d+)*m")
+
+
+def ansi(s: str) -> str:
+    return f"\x1b[{s}"
+
+
+def ansi_style(*v: int) -> str:
+    return ansi(";".join(str(v)) + "m")
+
+
+LINE_UP = ansi("A")
+LINE_CLEAR = ansi("2K")
+
+RESET_STYLE = ansi_style(0)
 
 
 @cache
@@ -26,9 +41,13 @@ def has_colors() -> bool:
 
 def _wrap_ansi_code(value: int) -> Callable[[str], str]:
     def wrapper(s: str) -> str:
-        return f"\033[{value}m{s}\033[0m" if has_colors() else s
+        return f"{ansi_style(value)}{s}{RESET_STYLE}" if has_colors() else s
 
     return wrapper
+
+
+def strip_ansi_style(s: str) -> str:
+    return _ANSI_STYLE_REGEX.sub("", s)
 
 
 bright = _wrap_ansi_code(1)
@@ -69,8 +88,12 @@ class Colored:
         return Colored(self.value, self.color, background)
 
     @cached_property
-    def formatted(self) -> str:
-        s = str(self.value)
+    def raw(self) -> str:
+        return str(self.value)
+
+    @cached_property
+    def _formatted(self) -> str:
+        s = self.raw
         if self.color:
             s = chalk.hex(self.color.as_hex)(s)
         if self.background:
@@ -78,7 +101,28 @@ class Colored:
         return s
 
     def __repr__(self) -> str:
-        return self.formatted
+        return self._formatted
 
-    def __str__(self) -> str:
-        return self.formatted
+    def __len__(self) -> int:
+        return len(self.raw)
+
+
+def char_len(c: str) -> int:
+    return 2 if east_asian_width(c) == "W" else 1
+
+
+def str_len(s: str) -> int:
+    return sum(char_len(c) for c in strip_ansi_style(s))
+
+
+def align_left(s: str, width: int, *, fill_char: str = " ") -> str:
+    return s + fill_char * max(width - str_len(s), 0)
+
+
+def align_right(s: str, width: int, *, fill_char: str = " ") -> str:
+    return fill_char * max(width - str_len(s), 0) + s
+
+
+def align_center(s: str, width: int, *, fill_char: str = " ") -> str:
+    padding = fill_char * (max(width - str_len(s), 0) // 2)
+    return align_left(padding + s + padding, width, fill_char=fill_char)

@@ -15,7 +15,7 @@ def trim(n: float, lower: float = 0, upper: float = 1) -> float:
     return min(max(lower, n), upper)
 
 
-class InterpolationBounds:
+class _MappingBounds:
     def __init__(self, start: float = 0, end: float = 1) -> None:
         self._start = start
         self._end = end
@@ -24,18 +24,35 @@ class InterpolationBounds:
     def _span(self) -> float:
         return self._end - self._start
 
-    def interpolate(self, f: float) -> float:
+    def value_at(self, f: float) -> float:
         return self._start + self._span * f
 
-    def inverse_interpolate(self, n: float, *, inside: bool = False) -> float:
+    def position_of(self, n: float) -> float:
         try:
-            f = (n - self._start) / self._span
+            return (n - self._start) / self._span
         except ZeroDivisionError:
             return 0.0
+
+
+class LinearMapping(_MappingBounds):
+    def position_of(self, n: float, *, inside: bool = False) -> float:
+        f = super().position_of(n)
         return trim(f, 0.0, 1.0) if inside else f
 
 
-class CyclicInterpolationBounds(InterpolationBounds):
+class LogarithmicMapping(LinearMapping):
+    def __init__(self, start: float = 0, end: float = 1, base: float = 10) -> None:
+        super().__init__(log(start, base), log(end, base))
+        self._base = base
+
+    def value_at(self, f: float) -> float:
+        return self._base ** super().value_at(f)
+
+    def position_of(self, n: float, *, inside: bool = False) -> float:
+        return super().position_of(log(n, self._base), inside=inside)
+
+
+class CyclicMapping(_MappingBounds):
     def __init__(
         self, start: float = 0, end: float = FULL_CIRCLE, period: float = FULL_CIRCLE
     ) -> None:
@@ -60,86 +77,65 @@ class CyclicInterpolationBounds(InterpolationBounds):
         super().__init__(start, end)
         self._period = period
 
-    def interpolate(self, f: float) -> float:
-        return super().interpolate(f) % self._period
+    def value_at(self, f: float) -> float:
+        return super().value_at(f) % self._period
 
-    def inverse_interpolate(self, n: float, *, inside: bool = False) -> float:
-        return super().inverse_interpolate(n % self._period, inside=inside)
-
-
-class LogarithmicInterpolationBounds(InterpolationBounds):
-    def __init__(self, start: float = 0, end: float = 1, base: float = 10) -> None:
-        super().__init__(log(start, base), log(end, base))
-        self._base = base
-
-    def interpolate(self, f: float) -> float:
-        return self._base ** super().interpolate(f)
-
-    def inverse_interpolate(self, n: float, *, inside: bool = False) -> float:
-        return super().inverse_interpolate(log(n, self._base), inside=inside)
+    def position_of(self, n: float) -> float:
+        return super().position_of(n % self._period)
 
 
-class MappingBounds:
-    def __init__(
-        self, from_bounds: InterpolationBounds, to_bounds: InterpolationBounds
-    ) -> None:
+def mapped(f: float, bounds: _Bounds) -> float:
+    return LinearMapping(*bounds).value_at(f)
+
+
+def unmapped(n: float, bounds: _Bounds, *, inside: bool = False) -> float:
+    return LinearMapping(*bounds).position_of(n, inside=inside)
+
+
+def mapped_log(f: float, bounds: _Bounds, *, base: float = 10) -> float:
+    return LogarithmicMapping(*bounds, base).value_at(f)
+
+
+def unmapped_log(
+    n: float, bounds: _Bounds, *, base: float = 10, inside: bool = False
+) -> float:
+    return LogarithmicMapping(*bounds, base).position_of(n, inside=inside)
+
+
+def mapped_cyclic(f: float, bounds: _Bounds, *, period: float = FULL_CIRCLE) -> float:
+    return CyclicMapping(*bounds, period).value_at(f)
+
+
+def mapped_angle(f: float, bounds: _Bounds) -> float:
+    """Shorthand for mapped_cyclic() for an angle (in radians) as period."""
+    return mapped_cyclic(f, bounds, period=FULL_CIRCLE)
+
+
+def unmapped_cyclic(n: float, bounds: _Bounds, *, period: float = FULL_CIRCLE) -> float:
+    return CyclicMapping(*bounds, period).position_of(n)
+
+
+def unmapped_angle(n: float, bounds: _Bounds) -> float:
+    """Shorthand for unmapped_cyclic() for an angle (in radians) as period."""
+    return unmapped_cyclic(n, bounds, period=FULL_CIRCLE)
+
+
+class NumberMapping:
+    def __init__(self, from_bounds: _MappingBounds, to_bounds: _MappingBounds) -> None:
         self._from_bounds = from_bounds
         self._to_bounds = to_bounds
 
     def map(self, n: float) -> float:
-        return self._to_bounds.interpolate(self._from_bounds.inverse_interpolate(n))
+        return self._to_bounds.value_at(self._from_bounds.position_of(n))
 
 
-def interpolate(f: float, bounds: _Bounds) -> float:
-    return InterpolationBounds(*bounds).interpolate(f)
-
-
-def interpolate_cyclic(
-    f: float, bounds: _Bounds, *, period: float = FULL_CIRCLE
+def map_number(
+    n: float, from_bounds: _MappingBounds, to_bounds: _MappingBounds
 ) -> float:
-    return CyclicInterpolationBounds(*bounds, period).interpolate(f)
+    return NumberMapping(from_bounds, to_bounds).map(n)
 
 
-def interpolate_angle(f: float, bounds: _Bounds) -> float:
-    return interpolate_cyclic(f, bounds, period=FULL_CIRCLE)
-
-
-def interpolate_logarithmic(f: float, bounds: _Bounds, *, base: float = 10) -> float:
-    return LogarithmicInterpolationBounds(*bounds, base).interpolate(f)
-
-
-def inverse_interpolate(n: float, bounds: _Bounds, *, inside: bool = False) -> float:
-    return InterpolationBounds(*bounds).inverse_interpolate(n, inside=inside)
-
-
-def inverse_interpolate_cyclic(
-    n: float, bounds: _Bounds, *, period: float = FULL_CIRCLE, inside: bool = False
-) -> float:
-    return CyclicInterpolationBounds(*bounds, period).inverse_interpolate(
-        n, inside=inside
-    )
-
-
-def inverse_interpolate_angle(
-    n: float, bounds: _Bounds, *, inside: bool = False
-) -> float:
-    return inverse_interpolate_cyclic(n, bounds, period=FULL_CIRCLE, inside=inside)
-
-
-def inverse_interpolate_logarithmic(
-    n: float, bounds: _Bounds, *, base: float = 10, inside: bool = False
-) -> float:
-    return LogarithmicInterpolationBounds(*bounds, base).inverse_interpolate(
-        n, inside=inside
-    )
-
-
-def map_number(n: float, from_bounds: _Bounds, to_bounds: _Bounds) -> float:
-    return MappingBounds(
-        InterpolationBounds(*from_bounds), InterpolationBounds(*to_bounds)
-    ).map(n)
-
-
+# TODO(githuib): more_itertools seems to have something similar
 def frange(
     step: float, start_or_end: float = None, end: float = None
 ) -> Iterator[float]:
@@ -149,7 +145,6 @@ def frange(
     :param step: difference between two successive numbers in the range
     :param start_or_end: start of range (or end of range, if end not given)
     :param end: end of range
-    :param inclusive: do we want to include 0 and 1 or not?
     :return: generated numbers
 
     >>> " ".join(f"{n:.2f}" for n in frange(0))

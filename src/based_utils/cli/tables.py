@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING
 
 from more_itertools import transpose
 
-from based_utils.cli import Colored
+from based_utils.cli import Colored, align_left, str_len
 from based_utils.data.iterators import filled_empty
-from based_utils.data.strings import align_left, strlen
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -25,7 +24,7 @@ def format_table(
 
     def max_columns_widths() -> Iterator[int]:
         for col in transpose(rows):
-            yield max(strlen(s) for s in col)
+            yield max(str_len(s) for s in col)
 
     def column_widths() -> Iterator[int]:
         for col_width, min_width in zip_longest(
@@ -36,7 +35,7 @@ def format_table(
     b = len(rows) - 1
 
     def t(s: str) -> str:
-        return Colored(s, color).formatted
+        return str(Colored(s, color))
 
     def left(r: int) -> str:
         return t("╔" if r == 0 else "╠" if r == 2 else "╚" if r == b else "║")

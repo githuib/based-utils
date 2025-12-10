@@ -104,8 +104,15 @@ ignore = [
   # warning: The following rule may cause conflicts when used with the formatter: `COM812`
   "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/	Trailing comma missing
 
+  # flake8-fixme (FIX)
+  "FIX001", #	https://docs.astral.sh/ruff/rules/line-contains-fixme/ line-contains-fixme	Line contains FIXME, consider resolving the issue
+  "FIX002", #	https://docs.astral.sh/ruff/rules/line-contains-todo/ line-contains-todo	Line contains TODO, consider resolving the issue
+
   # flake8-pyi (PYI)
   "PYI025", # https://docs.astral.sh/ruff/rules/unaliased-collections-abc-set-import/	Use from collections.abc import Set as AbstractSet to avoid confusion with the set builtin
+
+  # flake8-todos (TD)
+  "TD003", # https://docs.astral.sh/ruff/rules/missing-todo-link/ missing-todo-link	Missing issue link for this TODO
 
   # Pylint (PL)
   # Refactor (PLR)

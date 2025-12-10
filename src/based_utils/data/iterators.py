@@ -145,3 +145,30 @@ def rotated_cw[T](rows: Iterable[Iterable[T]]) -> Iterator[tuple[T, ...]]:
 
 def rotated_ccw[T](rows: Iterable[Iterable[T]]) -> Iterator[tuple[T, ...]]:
     return transpose(reversed(list(rows)))
+
+
+# strings
+
+
+def equalized_lines(
+    lines: Iterable[str], *, fill_char: str = " ", max_length: int = None
+) -> Iterator[str]:
+    for line in equalized(lines, fill_char, max_length=max_length):
+        yield "".join(line)
+
+
+def transposed_lines(lines: Iterable[str]) -> Iterator[str]:
+    for col in transpose(lines):
+        yield "".join(col)
+
+
+def split_at(s: str, pos: int) -> tuple[str, str]:
+    return s[:pos], s[pos:]
+
+
+def split_conditional[T](
+    collection: list[T], condition: Callable[[T], bool]
+) -> tuple[list[T], list[T]]:
+    left = [item for item in collection if condition(item)]
+    right = [item for item in collection if item not in left]
+    return left, right

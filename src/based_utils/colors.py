@@ -1,10 +1,9 @@
 from dataclasses import astuple, dataclass, replace
 from functools import cached_property, total_ordering
-from typing import Self
 
-from hsluv import hex_to_hsluv, hsluv_to_hex
+from hsluv import hex_to_hsluv, hsluv_to_hex, hsluv_to_rgb, rgb_to_hsluv
 
-from .calx import interpolate, interpolate_cyclic, trim
+from .calx import mapped, mapped_cyclic, trim
 
 _INCREASE_FACTOR = 2**0.5
 
@@ -51,11 +50,7 @@ def _normalize_rgb_hex(rgb_hex: str) -> str:
     return f"{r}{g}{b}"
 
 
-@dataclass(frozen=True)
-class _RGB:
-    red: int
-    green: int
-    blue: int
+type _RGB = tuple[int, int, int]
 
 
 @dataclass(frozen=True)
@@ -78,6 +73,16 @@ class _HSLuv:
     def as_hex(self) -> str:
         return hsluv_to_hex(astuple(self))[1:]
 
+    @classmethod
+    def from_rgb(cls, rgb: _RGB) -> _HSLuv:
+        r, g, b = rgb
+        return cls(*rgb_to_hsluv((r / 255, g / 255, b / 255)))
+
+    @cached_property
+    def as_rgb(self) -> _RGB:
+        r, g, b = hsluv_to_rgb(astuple(self))
+        return round(r * 255), round(g * 255), round(b * 255)
+
 
 @dataclass(frozen=True)
 class _Color:
@@ -97,7 +102,7 @@ class Color(_Color):
     def __repr__(self) -> str:
         return repr(self._as_hsluv)
 
-    def __lt__(self, other: Self) -> bool:
+    def __lt__(self, other: Color) -> bool:
         return self.as_sortable_tuple < other.as_sortable_tuple
 
     @cached_property
@@ -105,7 +110,7 @@ class Color(_Color):
         return self.lightness, self.saturation, self.hue
 
     @classmethod
-    def _from_hsluv(cls, hsluv: _HSLuv) -> Self:
+    def _from_hsluv(cls, hsluv: _HSLuv) -> Color:
         return cls(hsluv.hue / 360, hsluv.saturation / 100, hsluv.lightness / 100)
 
     @cached_property
@@ -113,7 +118,7 @@ class Color(_Color):
         return _HSLuv(self.hue * 360, self.saturation * 100, self.lightness * 100)
 
     @classmethod
-    def from_hex(cls, rgb_hex: str) -> Self:
+    def from_hex(cls, rgb_hex: str) -> Color:
         """
         Create a Color from an RGB hex string.
 
@@ -124,12 +129,12 @@ class Color(_Color):
         >>> c1.as_hex
         '808303'
         >>> c1.as_rgb
-        _RGB(red=128, green=131, blue=3)
+        (128, 131, 3)
         >>> c2 = Color.from_hex("0af")
         >>> c2.as_hex
         '00aaff'
         >>> c2.as_rgb
-        _RGB(red=0, green=170, blue=255)
+        (0, 170, 255)
         """
         return cls._from_hsluv(_HSLuv.from_hex(_normalize_rgb_hex(rgb_hex)))
 
@@ -138,30 +143,29 @@ class Color(_Color):
         return self._as_hsluv.as_hex
 
     @classmethod
-    def from_rgb(cls, rgb: _RGB) -> Self:
+    def from_rgb(cls, rgb: _RGB) -> Color:
         """
         Create a Color from RGB values.
 
         :param rgb: RGB instance
         :return: Color instance
 
-        >>> c = Color.from_rgb(_RGB(128, 131, 3))
-        >>> c.as_hex
+        >>> c1 = Color.from_rgb((128, 131, 3))
+        >>> c1.as_hex
         '808303'
-        >>> c.as_rgb
-        _RGB(red=128, green=131, blue=3)
-        >>> c2 = Color.from_rgb(_RGB(0, 170, 255))
+        >>> c1.as_rgb
+        (128, 131, 3)
+        >>> c2 = Color.from_rgb((0, 170, 255))
         >>> c2.as_hex
         '00aaff'
         >>> c2.as_rgb
-        _RGB(red=0, green=170, blue=255)
+        (0, 170, 255)
         """
-        return cls.from_hex(f"{rgb.red:02x}{rgb.green:02x}{rgb.blue:02x}")
+        return cls._from_hsluv(_HSLuv.from_rgb(rgb))
 
     @cached_property
     def as_rgb(self) -> _RGB:
-        r1, r2, g1, g2, b1, b2 = iter(self.as_hex)
-        return _RGB(int(r1 + r2, 16), int(g1 + g2, 16), int(b1 + b2, 16))
+        return self._as_hsluv.as_rgb
 
     def adjust(
         self, *, hue: float = None, saturation: float = None, lightness: float = None
@@ -218,9 +222,9 @@ class Color(_Color):
 
     def blend(self, other: Color, amount: float = 0.5) -> Color:
         return Color(
-            interpolate_cyclic(amount, (self.hue, other.hue), period=1),
-            interpolate(amount, (self.saturation, other.saturation)),
-            interpolate(amount, (self.lightness, other.lightness)),
+            mapped_cyclic(amount, (self.hue, other.hue), period=1),
+            mapped(amount, (self.saturation, other.saturation)),
+            mapped(amount, (self.lightness, other.lightness)),
         )
 
     @cached_property
