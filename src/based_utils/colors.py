@@ -314,7 +314,7 @@ class Colors(ColorTheme):
     purple = c(281)
     pink = c(329)
 
-    brown = orange.blend(yellow)
+    brown = orange.blend(yellow, 0.25).saturated(0.5)
 
 
 class AltColors(ColorTheme):
@@ -331,4 +331,4 @@ class AltColors(ColorTheme):
     purple = c(280)
     pink = c(325)
 
-    brown = orange.blend(yellow)
+    brown = orange.blend(yellow, 0.3).saturated(0.5)
