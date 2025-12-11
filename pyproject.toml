@@ -23,6 +23,7 @@ classifiers = [
 dependencies = [
   "gaffe",
   "hsluv",
+  "kleur",
   "more_itertools",
 ]
 
@@ -38,6 +39,9 @@ dev = [
 [project.urls]
 PyPI = "https://pypi.org/project/based-utils/"
 Github = "https://github.com/githuib/based-utils/"
+
+#[tool.uv.sources]
+#powerchord = { path = "../powerchord", editable = true }
 
 [project.scripts]
 colors = "based_utils.entry_points:print_colors"

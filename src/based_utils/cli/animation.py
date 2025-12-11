@@ -8,12 +8,11 @@ from itertools import count
 from os import get_terminal_size
 from typing import TYPE_CHECKING, cast
 
+from kleur import Color, Colored
+from kleur.formatting import LINE_CLEAR, LINE_UP
 from more_itertools.recipes import consume
 
 from based_utils.calx import randf
-from based_utils.colors import Color
-
-from .formats import LINE_CLEAR, LINE_UP, Colored
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

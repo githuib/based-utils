@@ -1,15 +1,38 @@
 from itertools import zip_longest
 from typing import TYPE_CHECKING
+from unicodedata import east_asian_width
 
+from kleur import Colored
+from kleur.formatting import strip_ansi_style
 from more_itertools import transpose
 
-from based_utils.cli import Colored, align_left, str_len
 from based_utils.data.iterators import filled_empty
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from based_utils.colors import Color
+    from kleur import Color
+
+
+def char_len(c: str) -> int:
+    return 2 if east_asian_width(c) == "W" else 1
+
+
+def str_len(s: str) -> int:
+    return sum(char_len(c) for c in strip_ansi_style(s))
+
+
+def align_left(s: str, width: int, *, fill_char: str = " ") -> str:
+    return s + fill_char * max(width - str_len(s), 0)
+
+
+def align_right(s: str, width: int, *, fill_char: str = " ") -> str:
+    return fill_char * max(width - str_len(s), 0) + s
+
+
+def align_center(s: str, width: int, *, fill_char: str = " ") -> str:
+    padding = fill_char * (max(width - str_len(s), 0) // 2)
+    return align_left(padding + s + padding, width, fill_char=fill_char)
 
 
 def format_table(

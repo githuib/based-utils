@@ -9,6 +9,7 @@ source = { editable = "." }
 dependencies = [
     { name = "gaffe" },
     { name = "hsluv" },
+    { name = "kleur" },
     { name = "more-itertools" },
 ]
 
@@ -25,6 +26,7 @@ dev = [
 requires-dist = [
     { name = "gaffe" },
     { name = "hsluv" },
+    { name = "kleur" },
     { name = "more-itertools" },
 ]
 
@@ -84,6 +86,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
+]
+
+[[package]]
+name = "kleur"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "hsluv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/62/6c29254a522c27b74199219440c671e7d75e8e4c97a469c951ee32c6b8e0/kleur-1.2.3.tar.gz", hash = "sha256:78959e470fb9378e64a6bc42fe1509fab09b3b8d63cf5eadb174c9148f62b7ff", size = 12830, upload-time = "2025-12-11T01:16:09.334Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/98/4b/61154f39a09f1e4a86091fd3948d0028f0b1dc76851e9c9938b432ac7bb6/kleur-1.2.3-py3-none-any.whl", hash = "sha256:70a84753ae6b67e0457e28389cad6e26c863cbdd3ada57cc51ced4dd5e52865f", size = 14705, upload-time = "2025-12-11T01:16:07.992Z" },
 ]
 
 [[package]]
@@ -184,16 +198,16 @@ wheels = [
 
 [[package]]
 name = "powerchord"
-version = "0.4.0"
+version = "0.4.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "based-utils" },
     { name = "chili" },
     { name = "gaffe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2c/a1/6554753224dc7e7e310a4cb75d0147d1e43bb1fa4d29f4fc2e96a3a37958/powerchord-0.4.0.tar.gz", hash = "sha256:801fb056530b59e2fc30bcc05ec4f4a68567b9285473308c8212607f49a2155a", size = 5191, upload-time = "2025-12-05T03:27:42.176Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/d1/30ae2bc1b1d086fcbdf41ced48c1a9c7e8ad132d83ee8c811da3dd1e6a40/powerchord-0.4.4.tar.gz", hash = "sha256:fc1e8c710c724052c26fb4231378fa8e3cae367619446f623f21bda9753792f7", size = 5122, upload-time = "2025-12-10T19:17:17.185Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/4d/8e53a925f5cb6de55dd345534870dcfaac2781148a8ff99ddf04fb8aca88/powerchord-0.4.0-py3-none-any.whl", hash = "sha256:2664fe04f59fd03aca66f04855aae783211db86e73a292813c030e6c7f64ee7e", size = 5624, upload-time = "2025-12-05T03:27:41.024Z" },
+    { url = "https://files.pythonhosted.org/packages/68/a3/6db148f983b54870c01aa96e94a6b1d547e4822bd9df57c8718136652a85/powerchord-0.4.4-py3-none-any.whl", hash = "sha256:d3cc7f13e0fa46d062d3e3e7b90c4c0249226f4f0ed05cb3879da6023cc1baba", size = 5549, upload-time = "2025-12-10T19:17:16.225Z" },
 ]
 
 [[package]]
