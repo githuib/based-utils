@@ -1,4 +1,3 @@
-from .animation import LazyItems, Lines, animate, animate_iter, animated
 from .args import (
     check_integer,
     check_integer_in_range,
@@ -13,13 +12,8 @@ from .tables import format_table
 __all__ = [
     "ConsoleHandlers",
     "FatalError",
-    "LazyItems",
-    "Lines",
     "LogLevel",
     "LogMeister",
-    "animate",
-    "animate_iter",
-    "animated",
     "check_integer",
     "check_integer_in_range",
     "format_table",
