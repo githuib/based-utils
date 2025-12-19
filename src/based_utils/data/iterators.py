@@ -2,7 +2,7 @@ from collections.abc import Callable
 from itertools import chain, pairwise, repeat, takewhile, tee
 from typing import TYPE_CHECKING
 
-from more_itertools import before_and_after, last, split_when, transpose
+from more_itertools import before_and_after, split_when, transpose
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -13,18 +13,6 @@ type Predicate[T] = Callable[[T], bool]
 
 def filter_non_empty[T](items: Iterable[T]) -> Iterator[T]:
     return filter(lambda item: item, items)
-
-
-def do_and_count[T, R](items: Iterable[T], cb: Callable[[T], R]) -> int:
-    n, _ = last(enumerate(cb(item) for item in items))
-    return n + 1
-
-
-def smart_range(start: int, stop: int, *, inclusive: bool = False) -> Iterable[int]:
-    direction = 1 if start <= stop else -1
-    if inclusive:
-        stop += direction
-    return range(start, stop, direction)
 
 
 def pairwise_circular[T](it: Iterable[T]) -> Iterator[tuple[T, T]]:

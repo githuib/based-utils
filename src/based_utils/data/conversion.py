@@ -31,28 +31,28 @@ def compose_number(numbers: Iterable[int]) -> int:
     return int("".join(str(n) for n in numbers))
 
 
-def bits_to_int(bits: Iterable[bool]) -> int:
+def bits_to_int(items: Iterable[object]) -> int:
     """
-    Convert boolean array -> number.
+    Convert boolean/int array -> number.
 
-    >>> bits_to_int([True, False, False, True, False, True, True])
+    >>> bits_to_int([True, False, 0, 1, "", 23, "je moeder"])
     75
     """
-    return int("".join([f"{b:d}" for b in bits]), 2)
+    return int("".join(f"{bool(i):b}" for i in items), 2)
 
 
-def int_to_bits(i: int, min_length: int = 0) -> list[bool]:
+def int_to_bits(i: int, *, zero_pad_to_length: int = 0) -> list[bool]:
     """
     Convert number -> boolean array.
 
     >>> int_to_bits(75)
     [True, False, False, True, False, True, True]
-    >>> int_to_bits(75, min_length=10)
+    >>> int_to_bits(75, zero_pad_to_length=10)
     [False, False, False, True, False, False, True, False, True, True]
     """
     s = f"{i:b}"
-    if min_length:
-        s = s.zfill(min_length)
+    if zero_pad_to_length:
+        s = s.zfill(zero_pad_to_length)
     return [c == "1" for c in s]
 
 
@@ -60,11 +60,11 @@ def invert_dict[K, V](d: Mapping[K, V]) -> dict[V, K]:
     return {v: k for k, v in d.items()}
 
 
-def grouped_pairs[K, V](pairs: Iterable[tuple[K, V]]) -> dict[K, list[V]]:
+def grouped_by_key[K, V](pairs: Iterable[tuple[K, V]]) -> dict[K, list[V]]:
     """
     Group items by key(item).
 
-    >>> grouped_pairs(
+    >>> grouped_by_key(
     ...     [
     ...         ("Alice", 3),
     ...         ("Bob", 6),
