@@ -11,9 +11,7 @@ def check_integer(v: str, *, conditions: Callable[[int], bool] = None) -> int:
     return value
 
 
-def check_integer_in_range(
-    low: int | None, high: int | None
-) -> Callable[[str], int]:
+def check_integer_in_range(low: int | None, high: int | None) -> Callable[[str], int]:
     def is_in_range(n: int) -> bool:
         return (low is None or n >= low) and (high is None or n <= high)
 

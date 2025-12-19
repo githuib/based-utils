@@ -1,10 +1,9 @@
 from itertools import zip_longest
-from typing import TYPE_CHECKING
-from unicodedata import east_asian_width
+from typing import TYPE_CHECKING, Self, SupportsIndex
 
 from kleur import Colored
-from kleur.formatting import strip_ansi_style
 from more_itertools import transpose
+from wcwidth import wcswidth
 
 from based_utils.data.iterators import filled_empty
 
@@ -14,25 +13,36 @@ if TYPE_CHECKING:
     from kleur import Color
 
 
-def char_len(c: str) -> int:
-    return 2 if east_asian_width(c) == "W" else 1
+class TerminalStr(str):
+    _raw_value: str
+    __slots__ = ("_raw_value",)
 
+    def __new__(cls, value: object) -> Self:
+        instance = super().__new__(cls, value)
+        instance._raw_value = str(value)
+        return instance
 
-def str_len(s: str) -> int:
-    return sum(char_len(c) for c in strip_ansi_style(s))
+    @property
+    def _raw_len(self) -> int:
+        return len(self._raw_value)
 
+    @property
+    def _len_diff(self) -> int:
+        return len(self) - self._raw_len
 
-def align_left(s: str, width: int, *, fill_char: str = " ") -> str:
-    return s + fill_char * max(width - str_len(s), 0)
+    def __len__(self) -> int:
+        return wcswidth(self._raw_value)
 
+    def ljust(self, width: SupportsIndex, fillchar: str = " ") -> TerminalStr:
+        return TerminalStr(self._raw_value.ljust(int(width) - self._len_diff, fillchar))
 
-def align_right(s: str, width: int, *, fill_char: str = " ") -> str:
-    return fill_char * max(width - str_len(s), 0) + s
+    def rjust(self, width: SupportsIndex, fillchar: str = " ") -> TerminalStr:
+        return TerminalStr(self._raw_value.rjust(int(width) - self._len_diff, fillchar))
 
-
-def align_center(s: str, width: int, *, fill_char: str = " ") -> str:
-    padding = fill_char * (max(width - str_len(s), 0) // 2)
-    return align_left(padding + s + padding, width, fill_char=fill_char)
+    def center(self, width: SupportsIndex, fillchar: str = " ") -> TerminalStr:
+        return TerminalStr(
+            self._raw_value.center(int(width) - self._len_diff, fillchar)
+        )
 
 
 def format_table(
@@ -43,11 +53,11 @@ def format_table(
 ) -> Iterator[str]:
     first, *rest = [tr for tr in table_rows if tr]
     trs: list[Iterable[str | int]] = [[], first, [], *rest, []]
-    rows = list(filled_empty([[str(v) for v in tr] for tr in trs], ""))
+    rows = list(filled_empty([[TerminalStr(v) for v in tr] for tr in trs], ""))
 
     def max_columns_widths() -> Iterator[int]:
         for col in transpose(rows):
-            yield max(str_len(s) for s in col)
+            yield max(len(s) for s in col)
 
     def column_widths() -> Iterator[int]:
         for col_width, min_width in zip_longest(
@@ -73,7 +83,7 @@ def format_table(
         yield (
             left(r_)
             + "".join(
-                (t("═") * (w + 2) if r_ in (0, 2, b) else f" {align_left(s, w)} ")
+                (t("═") * (w + 2) if r_ in (0, 2, b) else f" {s.ljust(w)} ")
                 + (
                     f"{right(r_)}  {left(r_)}"
                     if c in (column_splits or [])

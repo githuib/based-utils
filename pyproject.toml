@@ -25,6 +25,7 @@ dependencies = [
   "hsluv",
   "kleur",
   "more_itertools",
+  "wcwidth",
 ]
 
 [dependency-groups]
