@@ -7,8 +7,6 @@ from logging.handlers import QueueHandler, QueueListener
 from multiprocessing import Queue
 from typing import TYPE_CHECKING
 
-from gaffe import raises
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -27,7 +25,6 @@ class LogLevel(IntEnum):
     DEBUG = logging.DEBUG
 
     @classmethod
-    @raises(InvalidLogLevelError)
     def decode(cls, value: str) -> LogLevel:
         if not value:
             return cls.NEVER

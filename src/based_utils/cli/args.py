@@ -1,6 +1,9 @@
-from typing import TYPE_CHECKING
+from abc import ABC, abstractmethod
+from argparse import ArgumentParser
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
+    from argparse import Namespace
     from collections.abc import Callable
 
 
@@ -31,3 +34,27 @@ def try_parse_key_value_pair(value: str) -> str | tuple[str, str]:
         return parse_key_value_pair(value)
     except ValueError:
         return value
+
+
+class ArgsParser(ABC):
+    name: ClassVar[str]
+
+    def __init__(self, parser: ArgumentParser) -> None:
+        self._parser = parser
+        self._parse_args()
+        parser.set_defaults(func=self._run_command)
+
+    @abstractmethod
+    def _parse_args(self) -> None: ...
+
+    @abstractmethod
+    def _run_command(self, args: Namespace) -> None: ...
+
+
+def run_command(*sub_parsers: type[ArgsParser]) -> None:
+    parser = ArgumentParser()
+    subparsers = parser.add_subparsers(required=True)
+    for cls in sub_parsers:
+        cls(subparsers.add_parser(cls.name))
+    args = parser.parse_args()
+    args.func(args)

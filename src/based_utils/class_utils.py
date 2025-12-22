@@ -30,3 +30,11 @@ class WithClearablePropertyCache:
         for attr in list(cache.keys()):
             if isinstance(getattr(cls, attr, None), cached_property):
                 del cache[attr]
+
+
+def get_class_vars[T](cls: type, value_type: type[T]) -> dict[str, T]:
+    return {
+        name: v
+        for name, v in cls.__dict__.items()
+        if not name.startswith("_") and isinstance(v, value_type)
+    }

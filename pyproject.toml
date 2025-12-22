@@ -20,12 +20,14 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = [
-  "gaffe",
-  "hsluv",
-  "kleur",
-  "more_itertools",
+dependencies = []
+
+[project.optional-dependencies]
+cli = [
   "wcwidth",
+]
+iter = [
+  "more_itertools",
 ]
 
 [dependency-groups]

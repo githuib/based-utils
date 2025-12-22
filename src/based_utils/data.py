@@ -1,3 +1,4 @@
+from collections import deque
 from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
@@ -21,10 +22,14 @@ def try_convert[T, R](cls: Callable[[T], R], val: T, *, default: R = None) -> R 
         return default
 
 
-def get_class_vars[T](cls: type, value_type: type[T]) -> Iterator[tuple[str, T]]:
-    for k, c in cls.__dict__.items():
-        if not k.startswith("_") and isinstance(c, value_type):
-            yield k, c
+def consume(iterator: Iterator) -> None:
+    """
+    Consume an iterator entirely.
+
+    We will achieve this by feeding the entire iterator into a zero-length deque.
+    Redefined here to avoid needing more_itertools for just this function.
+    """
+    deque(iterator, maxlen=0)
 
 
 def compose_number(numbers: Iterable[int]) -> int:
@@ -83,3 +88,10 @@ def grouped_by_key[K, V](pairs: Iterable[tuple[K, V]]) -> dict[K, list[V]]:
     for k, v in pairs:
         result.setdefault(k, []).append(v)
     return result
+
+
+def filled_empty[T](rows: Iterable[Iterable[T]], value: T) -> Iterator[list[T]]:
+    rows_seq = [list(row) for row in rows]
+    max_width = max(len(row) for row in rows_seq)
+    for row in rows_seq:
+        yield [*row, *([value] * (max_width - len(row)))]

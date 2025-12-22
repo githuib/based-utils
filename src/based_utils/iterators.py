@@ -2,7 +2,12 @@ from collections.abc import Callable
 from itertools import chain, pairwise, repeat, takewhile, tee
 from typing import TYPE_CHECKING
 
-from more_itertools import before_and_after, split_when, transpose
+from based_utils._sub_modules import SubpackageImportError
+
+try:
+    from more_itertools import before_and_after, split_when, transpose
+except ImportError as exc:
+    raise SubpackageImportError(name="iter") from exc
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -118,13 +123,6 @@ def split_items[T](items: Iterable[T], *, delimiter: T = None) -> Iterator[list[
             next(it)
         except StopIteration:
             break
-
-
-def filled_empty[T](rows: Iterable[Iterable[T]], value: T) -> Iterator[list[T]]:
-    rows_seq = [list(row) for row in rows]
-    max_width = max(len(row) for row in rows_seq)
-    for row in rows_seq:
-        yield [*row, *([value] * (max_width - len(row)))]
 
 
 def rotated_cw[T](rows: Iterable[Iterable[T]]) -> Iterator[tuple[T, ...]]:
