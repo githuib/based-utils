@@ -4,7 +4,7 @@ requires-python = ">=3.14"
 
 [[package]]
 name = "based-utils"
-version = "0.11.3"
+version = "1.0.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -35,7 +35,7 @@ provides-extras = ["cli", "iter"]
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy" },
-    { name = "powerchord", editable = "../powerchord" },
+    { name = "powerchord" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -256,29 +256,16 @@ wheels = [
 [[package]]
 name = "powerchord"
 version = "0.4.8"
-source = { editable = "../powerchord" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "based-utils", extra = ["cli", "iter"] },
+    { name = "based-utils" },
     { name = "chili" },
     { name = "gaffe" },
     { name = "kleur" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "based-utils", extras = ["cli", "iter"], editable = "." },
-    { name = "chili" },
-    { name = "gaffe" },
-    { name = "kleur" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
+sdist = { url = "https://files.pythonhosted.org/packages/6d/b7/abb4219c39f5045430b414f0af3c100979f4c57e8b4d171177f6c52c8df7/powerchord-0.4.8.tar.gz", hash = "sha256:0bfa28197148b96f4b6e54a2fe2becd59edba384b6031cfe5a5a2699c82a487e", size = 5190, upload-time = "2025-12-18T19:37:01.141Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/b0/665eec79ce2cccb32d7ef4da6c99141e3b55ba98a18ee776a0e7c8fa0b73/powerchord-0.4.8-py3-none-any.whl", hash = "sha256:01d62c65999582852763e892f6d7b1e0c192b8d818900df11c769a5f96f6f4ba", size = 5551, upload-time = "2025-12-18T19:36:59.701Z" },
 ]
 
 [[package]]
