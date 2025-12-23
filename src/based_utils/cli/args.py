@@ -2,9 +2,11 @@ from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, ClassVar
 
+from .formatting import write_lines
+
 if TYPE_CHECKING:
     from argparse import Namespace
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
 
 def check_integer(v: str, *, conditions: Callable[[int], bool] = None) -> int:
@@ -36,25 +38,31 @@ def try_parse_key_value_pair(value: str) -> str | tuple[str, str]:
         return value
 
 
+class CommandRunner(ABC):
+    @abstractmethod
+    def __init__(self, args: Namespace) -> None: ...
+
+    @abstractmethod
+    def run(self) -> Iterator[str]: ...
+
+
 class ArgsParser(ABC):
-    name: ClassVar[str]
+    _name: ClassVar[str]
 
     def __init__(self, parser: ArgumentParser) -> None:
-        self._parser = parser
-        self._parse_args()
         parser.set_defaults(func=self._run_command)
 
     @abstractmethod
-    def _parse_args(self) -> None: ...
+    def _runner_cls(self, args: Namespace) -> type[CommandRunner]: ...
 
-    @abstractmethod
-    def _run_command(self, args: Namespace) -> None: ...
+    def _run_command(self, args: Namespace) -> None:
+        write_lines(self._runner_cls(args)(args).run())
 
 
 def run_command(*sub_parsers: type[ArgsParser]) -> None:
     parser = ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
     for cls in sub_parsers:
-        cls(subparsers.add_parser(cls.name))
+        cls(subparsers.add_parser(cls._name))
     args = parser.parse_args()
     args.func(args)

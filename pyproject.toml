@@ -54,13 +54,10 @@ colors = "based_utils.entry_points:print_colors"
 requires = ["uv_build>=0.9.3,<0.10.0"]
 build-backend = "uv_build"
 
-[tool.powerchord]
-tasks = [
-  "mypy",
-  "pytest",
-  "ruff check",
-#  "ruff format",
-]
+[tool.powerchord.tasks]
+typing = "uv run --all-extras mypy"
+doctests = "pytest"
+lint = "ruff check"
 
 [tool.mypy]
 files = ["src"] #, "tests"]
