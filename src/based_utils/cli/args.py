@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, ClassVar
 
-from .formatting import write_lines
+from .io import write_lines
 
 if TYPE_CHECKING:
     from argparse import Namespace

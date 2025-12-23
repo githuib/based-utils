@@ -8,16 +8,8 @@ from .args import (
 )
 from .clox import human_readable_duration, timed, timed_awaitable
 from .exec import FatalError, killed_by_errors
-from .formatting import (
-    ANSI_ESCAPE,
-    Lines,
-    Table,
-    TerminalStr,
-    ansi,
-    clear_lines,
-    refresh_lines,
-    write_lines,
-)
+from .formatting import Table, TerminalStr
+from .io import ANSI_ESCAPE, Lines, ansi, clear_lines, refresh_lines, write_lines
 from .logs import ConsoleHandlers, LogLevel, LogMeister
 
 __all__ = [
