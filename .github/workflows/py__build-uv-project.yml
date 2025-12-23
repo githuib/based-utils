@@ -34,7 +34,7 @@ jobs:
       - name: Run QA checks
         run: |
           uv sync --locked --all-extras --dev
-#          uv run powerchord
+          uv run powerchord
 
       - name: Build package
         run: |
