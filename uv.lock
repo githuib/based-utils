@@ -4,15 +4,15 @@ requires-python = ">=3.14"
 
 [[package]]
 name = "based-utils"
-version = "1.0.3"
+version = "1.0.4"
 source = { editable = "." }
 
 [package.optional-dependencies]
-cli = [
-    { name = "wcwidth" },
-]
 iter = [
     { name = "more-itertools" },
+]
+styledcli = [
+    { name = "wcwidth" },
 ]
 
 [package.dev-dependencies]
@@ -28,9 +28,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "more-itertools", marker = "extra == 'iter'" },
-    { name = "wcwidth", marker = "extra == 'cli'" },
+    { name = "wcwidth", marker = "extra == 'styledcli'" },
 ]
-provides-extras = ["cli", "iter"]
+provides-extras = ["styledcli", "iter"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -259,7 +259,7 @@ name = "powerchord"
 version = "0.4.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "based-utils", extra = ["cli"] },
+    { name = "based-utils" },
     { name = "chili" },
     { name = "gaffe" },
     { name = "kleur" },
