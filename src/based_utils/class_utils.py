@@ -18,6 +18,20 @@ class Unique:
         return repr(self.data)
 
 
+class Check:
+    def __init__(self) -> None:
+        self._value = False
+
+    def check(self) -> None:
+        self._value = True
+
+    def uncheck(self) -> None:
+        self._value = False
+
+    def __bool__(self) -> bool:
+        return self._value
+
+
 class WithClearablePropertyCache:
     def clear_property_cache(self) -> None:
         """
