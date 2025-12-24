@@ -2,12 +2,7 @@ from collections.abc import Callable
 from itertools import chain, pairwise, repeat, takewhile, tee
 from typing import TYPE_CHECKING
 
-from based_utils._sub_modules import SubpackageImportError
-
-try:
-    from more_itertools import before_and_after, split_when, transpose
-except ImportError as exc:
-    raise SubpackageImportError(name="iter") from exc
+from more_itertools import before_and_after, split_when, transpose
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

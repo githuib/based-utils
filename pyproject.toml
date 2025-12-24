@@ -23,9 +23,6 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-styledcli = [
-  "wcwidth",
-]
 iter = [
   "more_itertools",
 ]

@@ -1,5 +1,6 @@
 from .args import (
     ArgsParser,
+    CommandRunner,
     check_integer,
     check_integer_in_range,
     parse_key_value_pair,
@@ -8,21 +9,36 @@ from .args import (
 )
 from .clox import human_readable_duration, timed, timed_awaitable
 from .exec import FatalError, killed_by_errors
-from .formatting import Table, TerminalStr
-from .io import ANSI_ESCAPE, Lines, ansi, clear_lines, refresh_lines, write_lines
-from .logs import ConsoleHandlers, LogLevel, LogMeister
+from .io import (
+    Lines,
+    Table,
+    TerminalStr,
+    ansi_escape,
+    ansi_style,
+    apply_ansi_style,
+    clear_lines,
+    refresh_lines,
+    strip_ansi_style,
+    visual_string_width,
+    write_lines,
+)
+from .logs import ConsoleHandlers, InvalidLogLevelError, LogLevel, LogMeister
 
 __all__ = [
-    "ANSI_ESCAPE",
     "ArgsParser",
+    "CommandRunner",
     "ConsoleHandlers",
     "FatalError",
+    "InvalidLogLevelError",
     "Lines",
     "LogLevel",
     "LogMeister",
     "Table",
     "TerminalStr",
-    "ansi",
+    "ansi_escape",
+    "ansi_escape",
+    "ansi_style",
+    "apply_ansi_style",
     "check_integer",
     "check_integer_in_range",
     "clear_lines",
@@ -31,8 +47,10 @@ __all__ = [
     "parse_key_value_pair",
     "refresh_lines",
     "run_command",
+    "strip_ansi_style",
     "timed",
     "timed_awaitable",
     "try_parse_key_value_pair",
+    "visual_string_width",
     "write_lines",
 ]
