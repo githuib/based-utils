@@ -6,6 +6,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        include:
+          - os: ubuntu-latest
+            prefix: xvfb-run
+
     steps:
       - uses: actions/checkout@v5
 
