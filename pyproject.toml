@@ -26,6 +26,10 @@ dependencies = []
 iter = [
   "more_itertools",
 ]
+keyboard = [
+  "pynput",
+]
+
 
 [dependency-groups]
 dev = [
@@ -35,6 +39,7 @@ dev = [
   "pytest",
   "pytest-asyncio",
   "ruff",
+  "types-pynput",
 ]
 
 [project.urls]

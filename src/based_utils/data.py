@@ -5,6 +5,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping
 
 
+def ignore[T](v: T) -> T:
+    return v
+
+
 @overload
 def try_convert[T, R](cls: Callable[[T], R], val: T, *, default: R) -> R: ...
 

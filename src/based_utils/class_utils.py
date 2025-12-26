@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from functools import cached_property
 from typing import Protocol, Self, runtime_checkable
 
@@ -44,6 +45,25 @@ class WithClearablePropertyCache:
         for attr in list(cache.keys()):
             if isinstance(getattr(cls, attr, None), cached_property):
                 del cache[attr]
+
+
+type Converter[T] = Callable[[T], T]
+
+
+class HasAttrConverters:
+    def _convert_attrs(self, converters: dict[str, Converter]) -> None:
+        """
+        Convert attributes of a dataclass after __init__() is called.
+
+        object.__setattr__() is one of the awkward options (*) we have,
+        when we want to set attributes in a frozen dataclass (which will raise a
+        FrozenInstanceError when its own __setattr__() or __delattr__() is invoked).
+
+        *) Another option could be to move the attributes to a super class and
+        call super().__init__() here.
+        """
+        for name, convert in converters.items():
+            object.__setattr__(self, name, convert(getattr(self, name)))
 
 
 def get_class_vars[T](cls: type, value_type: type[T]) -> dict[str, T]:

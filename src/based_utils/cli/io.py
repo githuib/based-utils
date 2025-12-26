@@ -1,6 +1,6 @@
 import re
 import sys
-import time
+from functools import cache
 from itertools import zip_longest
 from os import get_terminal_size
 from typing import TYPE_CHECKING, Self, SupportsIndex
@@ -10,6 +10,7 @@ from based_utils.data import filled_empty
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
+    from os import terminal_size
 
 
 type Lines = Iterable[str]
@@ -29,25 +30,23 @@ def ansi_style(*values: int) -> str:
 _ANSI_STYLE_REGEX = re.compile(rf"{_ANSI_ESCAPE}\[\d+(;\d+)*m")
 
 
+type StringStyler = Callable[[str], str]
+
+
 def strip_ansi_style(s: str) -> str:
     return _ANSI_STYLE_REGEX.sub("", s)
 
 
-def apply_ansi_style(s: str, *values: int) -> str:
-    return f"{ansi_style(*values)}{s}{ansi_style(0)}"
+def apply_ansi_style(*values: int) -> StringStyler:
+    def wrapper(s: str) -> str:
+        return f"{ansi_style(*values)}{s}{ansi_style(0)}"
+
+    return wrapper
 
 
-def write_lines(lines: Iterable, *, crop_to_terminal: bool = False) -> int:
-    block = [str(line) for line in lines]
-    height = len(block)
-    if crop_to_terminal:
-        # Could be nice to crop to width as well, but it seems
-        # to me vertical cropping is a bit quirky now anyway.
-        _max_width, max_height = get_terminal_size()
-        height = min(max_height - 1, height)
-    for line in block[-height:]:
-        sys.stdout.write(f"{line}\n")
-    return height
+@cache
+def term_size() -> terminal_size:
+    return get_terminal_size()
 
 
 _LINE_UP = ansi_escape("A")
@@ -59,13 +58,17 @@ def clear_lines(amount: int) -> None:
         sys.stdout.write(_LINE_UP + _LINE_CLEAR)
 
 
-def refresh_lines(
-    lines: Iterable, *, fps: float = None, crop_to_terminal: bool = False
-) -> None:
-    lines_written = write_lines(lines, crop_to_terminal=crop_to_terminal)
-    if fps:
-        time.sleep(1 / fps)
-    clear_lines(lines_written)
+def write_lines(lines: Iterable, *, crop_to_term: bool = False) -> int:
+    block = [str(line) for line in lines]
+    height = len(block)
+    if crop_to_term:
+        # Could be nice to crop to width as well, but it seems
+        # to me vertical cropping is a bit quirky now anyway.
+        _max_width, max_height = get_terminal_size()
+        height = min(max_height - 1, height)
+    for line in block[-height:]:
+        sys.stdout.write(f"{line}\n")
+    return height
 
 
 def visual_string_width(s: str) -> int:
