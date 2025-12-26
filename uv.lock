@@ -4,7 +4,7 @@ requires-python = ">=3.14"
 
 [[package]]
 name = "based-utils"
-version = "1.0.7"
+version = "1.0.8"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -36,7 +36,7 @@ provides-extras = ["iter", "keyboard"]
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy" },
-    { name = "powerchord", editable = "../powerchord" },
+    { name = "powerchord" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -138,25 +138,14 @@ wheels = [
 [[package]]
 name = "kleur"
 version = "2.0.7"
-source = { editable = "../kleur" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "based-utils" },
     { name = "hsluv" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "based-utils", editable = "." },
-    { name = "hsluv" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy" },
-    { name = "powerchord" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
+sdist = { url = "https://files.pythonhosted.org/packages/3f/97/c701c8be9557a694e9e7a3593dbd33f38c8b5b3e1e661367a9e16f265982/kleur-2.0.7.tar.gz", hash = "sha256:e9184a276ff8c8df629ea56bcc430e2eb2a43d05b376761396d0e54c56ceaa8f", size = 11383, upload-time = "2025-12-24T05:17:43.354Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/11/80/78bdd5b75ff719bbc9fc535b902a86a65d9a64c3747df2f14ee6dc79f6ad/kleur-2.0.7-py3-none-any.whl", hash = "sha256:1dcebe240a8ee1f1852aa37d1cde8c4c93693625a2c72099d67391a71aba2655", size = 13516, upload-time = "2025-12-24T05:17:41.868Z" },
 ]
 
 [[package]]
@@ -276,29 +265,16 @@ wheels = [
 [[package]]
 name = "powerchord"
 version = "0.4.11"
-source = { editable = "../powerchord" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "based-utils" },
     { name = "chili" },
     { name = "gaffe" },
     { name = "kleur" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "based-utils", editable = "." },
-    { name = "chili" },
-    { name = "gaffe" },
-    { name = "kleur", editable = "../kleur" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
+sdist = { url = "https://files.pythonhosted.org/packages/23/ba/3ffafc7e8a11ff02fcf9a309b238196236140d0f62486c5cd60c721a3d4e/powerchord-0.4.11.tar.gz", hash = "sha256:bd84fa7586e618c4e532778034ced2cb7135ab1f9f72a6e333d44f162b321885", size = 5173, upload-time = "2025-12-24T05:19:00.816Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/3e/c8d6f9fcf706c62047793ad0597d7fb13c6a2fff8db997725371f7d35267/powerchord-0.4.11-py3-none-any.whl", hash = "sha256:b697a10a10f0e87bbd28013fd189366e61648ce5cb4e21ca9d2f549222fecf9e", size = 5564, upload-time = "2025-12-24T05:18:59.66Z" },
 ]
 
 [[package]]
