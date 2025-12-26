@@ -1,11 +1,8 @@
 from collections import defaultdict
 from time import perf_counter_ns
-from typing import TYPE_CHECKING
 
 from pynput import keyboard
-
-if TYPE_CHECKING:
-    from pynput.keyboard import Key, KeyCode
+from pynput.keyboard import Key, KeyCode  # noqa: TC002
 
 
 def listen_to_keys(*keys: Key | KeyCode) -> dict[Key | KeyCode, list[int]]:
