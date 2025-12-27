@@ -62,12 +62,9 @@ def write_lines(lines: Iterable, *, crop_to_term: bool = False) -> int:
     block = [str(line) for line in lines]
 
     if crop_to_term:
-        width, height = max(len(r) for r in block), len(block)
-        block = [line.ljust(width) for line in block]
-        xs, ys = resample((width, height), term_size())
-        for y in ys:
-            sys.stdout.write(f"{''.join(block[y][x] for x in xs)}\n")
-        return len(ys)
+        w, h, ts = max(len(r) for r in block), len(block), term_size()
+        block = [line.ljust(w) for line in block]
+        block = ["".join(block[y][x] for x, y in r) for r in resample((w, h), ts)]
 
     for line in block:
         sys.stdout.write(f"{line}\n")

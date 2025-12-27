@@ -107,14 +107,37 @@ def _resample_dim(length: int, cropped: int, sample_ratio: float) -> Iterator[in
     yield length - 1
 
 
-def resample(
-    size: tuple[int, int], crop_size: tuple[int, int]
-) -> tuple[list[int], list[int]]:
-    (w, h), (w_max, h_max) = size, crop_size
-    crop_size = w_cropped, h_cropped = min(w, w_max), min(h, h_max - 1)
-    if crop_size == size:
-        return list(range(w - 1)), list(range(h - 1))
+type P2 = tuple[int, int]
 
-    sr_w, sr_h = [((n - 1) / (c - 1)) for n, c in zip(size, crop_size, strict=True)]
-    xs, ys = _resample_dim(w, w_cropped, sr_w), _resample_dim(h, h_cropped, sr_h)
-    return list(xs), list(ys)
+
+def resample(
+    size: P2,
+    crop_size: P2,
+    *,
+    origin: P2 = (0, 0),
+    keep_x: Iterable[int] = None,
+    keep_y: Iterable[int] = None,
+) -> Iterator[list[P2]]:
+    (w, h), (w_max, h_max) = size, crop_size
+    crop_size = min(w, w_max), min(h, h_max)
+    xs: Iterable[int]
+    ys: Iterable[int]
+
+    if crop_size == size:
+        xs, ys = range(h - 1), range(w - 1)
+
+    else:
+        sample_ratios = [
+            ((n - 1) / (c - 1)) for n, c in zip(size, crop_size, strict=True)
+        ]
+        xs, ys = [
+            [i + o for i in _resample_dim(s, c, sr)]
+            for s, c, sr, o in zip(size, crop_size, sample_ratios, origin, strict=True)
+        ]
+        for cs, keep in zip((xs, ys), (keep_x, keep_y), strict=True):
+            for k in keep or []:
+                _, idx = min((abs(c - k), i) for i, c in enumerate(cs))
+                cs[idx] = k
+
+    for y in ys:
+        yield [(x, y) for x in xs]
