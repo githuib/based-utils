@@ -101,10 +101,12 @@ def filled_empty[T](rows: Iterable[Iterable[T]], value: T) -> Iterator[list[T]]:
         yield [*row, *([value] * (max_width - len(row)))]
 
 
-def _resample_dim(length: int, cropped: int, sample_ratio: float) -> Iterator[int]:
-    for i in range(cropped - 1):
-        yield round(i * sample_ratio)
-    yield length - 1
+def _resample(length: int, cropped: int, offset: int) -> list[int]:
+    if length == cropped:
+        return [i + offset for i in range(length)]
+
+    sr = (length - 1) / (cropped - 1)
+    return [round(i * sr) + offset for i in range(cropped - 1)] + [length - 1 + offset]
 
 
 type P2 = tuple[int, int]
@@ -119,25 +121,11 @@ def resample(
     keep_y: Iterable[int] = None,
 ) -> Iterator[list[P2]]:
     (w, h), (w_max, h_max) = size, crop_size
-    crop_size = min(w, w_max), min(h, h_max)
-    xs: Iterable[int]
-    ys: Iterable[int]
-
-    if crop_size == size:
-        xs, ys = range(h - 1), range(w - 1)
-
-    else:
-        sample_ratios = [
-            ((n - 1) / (c - 1)) for n, c in zip(size, crop_size, strict=True)
-        ]
-        xs, ys = [
-            [i + o for i in _resample_dim(s, c, sr)]
-            for s, c, sr, o in zip(size, crop_size, sample_ratios, origin, strict=True)
-        ]
-        for cs, keep in zip((xs, ys), (keep_x, keep_y), strict=True):
-            for k in keep or []:
-                _, idx = min((abs(c - k), i) for i, c in enumerate(cs))
-                cs[idx] = k
-
+    c_size = min(w, w_max), min(h, h_max)
+    xs, ys = [_resample(s, c, o) for s, c, o in zip(size, c_size, origin, strict=True)]
+    for cs, keep in zip((xs, ys), (keep_x, keep_y), strict=True):
+        for k in keep or []:
+            _, idx = min((abs(c - k), i) for i, c in enumerate(cs))
+            cs[idx] = k
     for y in ys:
         yield [(x, y) for x in xs]
