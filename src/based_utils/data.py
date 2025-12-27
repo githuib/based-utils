@@ -125,6 +125,8 @@ def resample(
     xs, ys = [_resample(s, c, o) for s, c, o in zip(size, c_size, origin, strict=True)]
     for cs, keep in zip((xs, ys), (keep_x, keep_y), strict=True):
         for k in reversed(keep or []):
+            if k in (cs[0], cs[-1]):
+                continue
             _, idx = min((abs(c - k), i) for i, c in enumerate(cs[1:-1], 1))
             cs[idx] = k
     for y in ys:
