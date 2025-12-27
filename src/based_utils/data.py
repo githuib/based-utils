@@ -2,7 +2,7 @@ from collections import deque
 from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
 
 def ignore[T](v: T) -> T:
@@ -117,15 +117,15 @@ def resample(
     crop_size: P2,
     *,
     origin: P2 = (0, 0),
-    keep_x: Iterable[int] = None,
-    keep_y: Iterable[int] = None,
+    keep_x: Sequence[int] = None,
+    keep_y: Sequence[int] = None,
 ) -> Iterator[list[P2]]:
     (w, h), (w_max, h_max) = size, crop_size
     c_size = min(w, w_max), min(h, h_max)
     xs, ys = [_resample(s, c, o) for s, c, o in zip(size, c_size, origin, strict=True)]
     for cs, keep in zip((xs, ys), (keep_x, keep_y), strict=True):
-        for k in keep or []:
-            _, idx = min((abs(c - k), i) for i, c in enumerate(cs))
+        for k in reversed(keep or []):
+            _, idx = min((abs(c - k), i) for i, c in enumerate(cs[1:-1], 1))
             cs[idx] = k
     for y in ys:
         yield [(x, y) for x in xs]

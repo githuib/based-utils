@@ -1,4 +1,6 @@
+from abc import ABC, abstractmethod
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Protocol, Self, runtime_checkable
 
@@ -47,11 +49,16 @@ class WithClearablePropertyCache:
                 del cache[attr]
 
 
-type Converter[T] = Callable[[T], T]
+type Modifier[T] = Callable[[T], T]
 
 
-class HasAttrConverters:
-    def _convert_attrs(self, converters: dict[str, Converter]) -> None:
+@dataclass(frozen=True)
+class WithAttrModifiers(ABC):
+    @property
+    @abstractmethod
+    def _attr_modifiers(self) -> dict[str, Modifier]: ...
+
+    def __post_init__(self) -> None:
         """
         Convert attributes of a dataclass after __init__() is called.
 
@@ -62,13 +69,19 @@ class HasAttrConverters:
         *) Another option could be to move the attributes to a super class and
         call super().__init__() here.
         """
-        for name, convert in converters.items():
+        for name, convert in self._attr_modifiers.items():
             object.__setattr__(self, name, convert(getattr(self, name)))
 
 
-def get_class_vars[T](cls: type, value_type: type[T]) -> dict[str, T]:
+class HasAttrConverters:
+    def _convert_attrs(self, *args: object) -> None:
+        pass
+
+
+def get_class_vars[T](cls: type, *, value_type: type[T] = None) -> dict[str, T]:
     return {
-        name: v
-        for name, v in cls.__dict__.items()
-        if not name.startswith("_") and isinstance(v, value_type)
+        name: value
+        for name, value in cls.__dict__.items()
+        if not name.startswith("_")
+        and (not value_type or isinstance(value, value_type))
     }
