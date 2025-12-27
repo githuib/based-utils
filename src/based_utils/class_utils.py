@@ -73,11 +73,6 @@ class WithAttrModifiers(ABC):
             object.__setattr__(self, name, convert(getattr(self, name)))
 
 
-class HasAttrConverters:
-    def _convert_attrs(self, *args: object) -> None:
-        pass
-
-
 def get_class_vars[T](cls: type, *, value_type: type[T] = None) -> dict[str, T]:
     return {
         name: value
