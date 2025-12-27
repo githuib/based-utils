@@ -99,3 +99,22 @@ def filled_empty[T](rows: Iterable[Iterable[T]], value: T) -> Iterator[list[T]]:
     max_width = max(len(row) for row in rows_seq)
     for row in rows_seq:
         yield [*row, *([value] * (max_width - len(row)))]
+
+
+def _resample_dim(length: int, cropped: int, sample_ratio: float) -> Iterator[int]:
+    for i in range(cropped - 1):
+        yield round(i * sample_ratio)
+    yield length - 1
+
+
+def resample(
+    size: tuple[int, int], crop_size: tuple[int, int]
+) -> tuple[list[int], list[int]]:
+    (w, h), (w_max, h_max) = size, crop_size
+    crop_size = w_cropped, h_cropped = min(w, w_max), min(h, h_max - 1)
+    if crop_size == size:
+        return list(range(w - 1)), list(range(h - 1))
+
+    sr_w, sr_h = [((n - 1) / (c - 1)) for n, c in zip(size, crop_size, strict=True)]
+    xs, ys = _resample_dim(w, w_cropped, sr_w), _resample_dim(h, h_cropped, sr_h)
+    return list(xs), list(ys)

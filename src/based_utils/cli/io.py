@@ -6,11 +6,10 @@ from os import get_terminal_size
 from typing import TYPE_CHECKING, Self, SupportsIndex
 from unicodedata import east_asian_width
 
-from based_utils.data import filled_empty
+from based_utils.data import filled_empty, resample
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
-    from os import terminal_size
 
 
 type Lines = Iterable[str]
@@ -45,8 +44,9 @@ def apply_ansi_style(*values: int) -> StringStyler:
 
 
 @cache
-def term_size() -> terminal_size:
-    return get_terminal_size()
+def term_size() -> tuple[int, int]:
+    width, height = get_terminal_size()
+    return width, height
 
 
 _LINE_UP = ansi_escape("A")
@@ -60,15 +60,18 @@ def clear_lines(amount: int) -> None:
 
 def write_lines(lines: Iterable, *, crop_to_term: bool = False) -> int:
     block = [str(line) for line in lines]
-    height = len(block)
+
     if crop_to_term:
-        # Could be nice to crop to width as well, but it seems
-        # to me vertical cropping is a bit quirky now anyway.
-        _max_width, max_height = get_terminal_size()
-        height = min(max_height - 1, height)
-    for line in block[-height:]:
+        width, height = max(len(r) for r in block), len(block)
+        block = [line.ljust(width) for line in block]
+        xs, ys = resample((width, height), term_size())
+        for y in ys:
+            sys.stdout.write(f"{''.join(block[y][x] for x in xs)}\n")
+        return len(ys)
+
+    for line in block:
         sys.stdout.write(f"{line}\n")
-    return height
+    return len(block)
 
 
 def visual_string_width(s: str) -> int:
