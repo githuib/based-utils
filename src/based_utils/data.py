@@ -109,17 +109,17 @@ def _resample(length: int, cropped: int, offset: int) -> list[int]:
     return [round(i * sr) + offset for i in range(cropped - 1)] + [length - 1 + offset]
 
 
-type P2 = tuple[int, int]
+type IntVec2 = tuple[int, int]
 
 
 def resample(
-    size: P2,
-    crop_size: P2,
+    size: IntVec2,
+    crop_size: IntVec2,
     *,
-    origin: P2 = (0, 0),
+    origin: IntVec2 = (0, 0),
     keep_x: Sequence[int] = None,
     keep_y: Sequence[int] = None,
-) -> Iterator[list[P2]]:
+) -> Iterator[list[IntVec2]]:
     (w, h), (w_max, h_max) = size, crop_size
     c_size = min(w, w_max), min(h, h_max)
     xs, ys = [_resample(s, c, o) for s, c, o in zip(size, c_size, origin, strict=True)]
